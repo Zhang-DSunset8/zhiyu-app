@@ -8,6 +8,28 @@ import { DEFAULT_AVATAR_ID } from '../types'
 
 type LoginMode = 'code' | 'password'
 
+/** 模拟登录接口返回结构 */
+interface MockLoginResult {
+  nickname: string
+  isNewUser: boolean
+}
+
+/**
+ * 模拟异步登录请求。
+ * 开发测试：将 isNewUser 写死为 true（新手引导）或 false（直达发现页）。
+ */
+function mockLoginRequest(fallbackNickname: string): Promise<MockLoginResult> {
+  return new Promise((resolve) => {
+    window.setTimeout(() => {
+      const isNewUser = true
+      resolve({
+        nickname: fallbackNickname,
+        isNewUser,
+      })
+    }, 600)
+  })
+}
+
 const SOCIAL_ICON_CLASS = 'text-[26px] text-white'
 
 type SocialLoginItem = {
@@ -101,6 +123,7 @@ export function Login() {
   const [agreed, setAgreed] = useState(false)
   const [codeSent, setCodeSent] = useState(false)
   const [codeCooldown, setCodeCooldown] = useState(0)
+  const [loggingIn, setLoggingIn] = useState(false)
 
   const validatePhone = () => /^1\d{10}$/.test(phone)
 
@@ -138,7 +161,7 @@ export function Login() {
     startCooldown()
   }
 
-  const handlePhoneLogin = () => {
+  const handlePhoneLogin = async () => {
     if (!validatePhone()) {
       showToast('请输入正确的手机号', 'info')
       return
@@ -161,23 +184,49 @@ export function Login() {
       }
     }
 
-    completeLogin(DEFAULT_AVATAR_ID, `用户${phone.slice(-4)}`, {
-      phone,
-      loginMethod: 'phone',
-    })
-    showToast('登录成功', 'success')
+    if (loggingIn) return
+    setLoggingIn(true)
+
+    try {
+      const fallbackNickname = `用户${phone.slice(-4)}`
+      // 1. 模拟登录请求，获取用户状态
+      const result = await mockLoginRequest(fallbackNickname)
+
+      // 2. 新老用户分流：新用户走 Onboarding，老用户直达发现页
+      completeLogin(DEFAULT_AVATAR_ID, result.nickname, {
+        phone,
+        loginMethod: 'phone',
+        isNewUser: result.isNewUser,
+      })
+      showToast('登录成功', 'success')
+    } finally {
+      setLoggingIn(false)
+    }
   }
 
-  const handleSocialLogin = (method: 'wechat' | 'qq' | 'apple') => {
+  const handleSocialLogin = async (method: 'wechat' | 'qq' | 'apple') => {
     if (!validateAgreement()) return
-    const suffix = Math.random().toString(36).slice(2, 6)
-    const nicknameMap = {
-      wechat: `微信用户${suffix}`,
-      qq: `QQ用户${suffix}`,
-      apple: `Apple用户${suffix}`,
+    if (loggingIn) return
+
+    setLoggingIn(true)
+    try {
+      const suffix = Math.random().toString(36).slice(2, 6)
+      const nicknameMap = {
+        wechat: `微信用户${suffix}`,
+        qq: `QQ用户${suffix}`,
+        apple: `Apple用户${suffix}`,
+      }
+      const fallbackNickname = nicknameMap[method]
+
+      const result = await mockLoginRequest(fallbackNickname)
+      completeLogin(DEFAULT_AVATAR_ID, result.nickname, {
+        loginMethod: method,
+        isNewUser: result.isNewUser,
+      })
+      showToast('登录成功', 'success')
+    } finally {
+      setLoggingIn(false)
     }
-    completeLogin(DEFAULT_AVATAR_ID, nicknameMap[method], { loginMethod: method })
-    showToast('登录成功', 'success')
   }
 
   const switchMode = (next: LoginMode) => {
@@ -187,8 +236,13 @@ export function Login() {
     setPassword('')
   }
 
-  const primaryLabel =
-    mode === 'password' ? '登录' : codeSent ? '登录' : '获取验证码'
+  const primaryLabel = loggingIn
+    ? '登录中...'
+    : mode === 'password'
+      ? '登录'
+      : codeSent
+        ? '登录'
+        : '获取验证码'
 
   return (
     <div className="fixed inset-0 z-[70] mx-auto min-h-screen w-full max-w-lg bg-white">
@@ -319,7 +373,8 @@ export function Login() {
             type="button"
             whileTap={{ scale: 0.98 }}
             onClick={handlePhoneLogin}
-            className="mt-6 w-full rounded-full bg-[#C6EBCD] py-4 text-base font-semibold text-white drop-shadow-sm transition-colors hover:bg-[#b5e4be]"
+            disabled={loggingIn}
+            className="mt-6 w-full rounded-full bg-[#C6EBCD] py-4 text-base font-semibold text-white drop-shadow-sm transition-colors hover:bg-[#b5e4be] disabled:opacity-70"
           >
             {primaryLabel}
           </motion.button>

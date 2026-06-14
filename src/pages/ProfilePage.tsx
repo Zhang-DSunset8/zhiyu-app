@@ -9,6 +9,7 @@ import { ProfileCard } from '../components/profile/ProfileCard'
 import { useUserStore } from '../store/useUserStore'
 import { AchievementOverview } from '../components/achievements/AchievementOverview'
 import { AchievementList } from '../components/achievements/AchievementList'
+import { DeleteAccountModal } from '../components/profile/DeleteAccountModal'
 
 function maskPhone(phone: string) {
   if (!phone) return '未绑定手机号'
@@ -35,6 +36,7 @@ function getAccountInfo(loginMethod: LoginMethod | null, phone: string) {
 export function ProfilePage() {
   const store = useAppStore()
   const logout = useAppStore((s) => s.logout)
+  const deleteAccount = useAppStore((s) => s.deleteAccount)
   const setNickname = useUserStore((s) => s.setNickname)
 
   const [showAchievements, setShowAchievements] = useState(false)
@@ -44,6 +46,7 @@ export function ProfilePage() {
   const [feedbackContact, setFeedbackContact] = useState('')
   const [clearConfirm, setClearConfirm] = useState(false)
   const [logoutConfirm, setLogoutConfirm] = useState(false)
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const recentAchievements = ACHIEVEMENTS.filter((a) => store.achievements.includes(a.id)).slice(-3).reverse()
@@ -110,6 +113,13 @@ export function ProfilePage() {
             className="w-full rounded-full border border-emerald-100 py-3 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50/80"
           >
             退出登录
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeleteAccountOpen(true)}
+            className="mt-4 w-full text-xs text-gray-400/60 transition-colors hover:text-gray-500"
+          >
+            注销账号
           </button>
         </GlassCard>
 
@@ -213,6 +223,15 @@ export function ProfilePage() {
           提交
         </button>
       </Modal>
+
+      <DeleteAccountModal
+        open={deleteAccountOpen}
+        onStay={() => setDeleteAccountOpen(false)}
+        onConfirmDelete={() => {
+          deleteAccount()
+          setDeleteAccountOpen(false)
+        }}
+      />
 
       <ConfirmDialog
         open={logoutConfirm}

@@ -18,6 +18,7 @@ import {
   MOOD_DIARY_REWARD,
   SELF_CARE_REWARD,
   STORAGE_KEY,
+  USER_STORAGE_KEY,
   WATER_NEEDED,
   DAILY_WATER_LIMIT,
   DAILY_WATER_LIMIT_ENABLED,
@@ -25,6 +26,7 @@ import {
   stageFromWater,
 } from '../types'
 import { parseAvatarId } from '../data/avatars'
+import { useUserStore } from './useUserStore'
 import { ACHIEVEMENTS, SELF_CARE_QUOTES, SELF_CARE_TASKS } from '../data/content'
 import { generateId, isYesterday, todayKey } from '../utils/date'
 import { vibrate } from '../utils/vibrate'
@@ -122,9 +124,10 @@ interface AppStore extends AppData {
   completeLogin: (
     avatar: AvatarId,
     nickname: string,
-    options?: { phone?: string; loginMethod?: LoginMethod },
+    options?: { phone?: string; loginMethod?: LoginMethod; isNewUser?: boolean },
   ) => void
   logout: () => void
+  deleteAccount: () => void
   setGuideStep: (step: number) => void
   skipGuide: () => void
   completeGuide: () => void
@@ -177,21 +180,43 @@ export const useAppStore = create<AppStore>()(
       setShowCalendar: (show) => set({ showCalendar: show }),
 
       completeLogin: (avatarId, nickname, options = {}) => {
-        const { phone = '', loginMethod } = options
+        const { phone = '', loginMethod, isNewUser = true } = options
         set({
           avatarId,
           nickname,
           phone,
           loginMethod: loginMethod ?? (phone ? 'phone' : null),
           loginComplete: true,
-          activeTab: 'orchard',
-          guideStep: 0,
+          // 新用户 → 新手引导；老用户 → 跳过引导，直达发现页
+          guideComplete: !isNewUser,
+          guideStep: isNewUser ? 0 : -1,
+          activeTab: isNewUser ? 'orchard' : 'discover',
         })
       },
 
       logout: () => {
         set({ loginComplete: false, activeTab: 'orchard' })
         get().showToast('已退出登录', 'info')
+      },
+
+      deleteAccount: () => {
+        localStorage.removeItem(STORAGE_KEY)
+        localStorage.removeItem('emotion-orchard-storage')
+        localStorage.removeItem(USER_STORAGE_KEY)
+        set({
+          ...defaultData,
+          activeTab: 'orchard',
+          toast: null,
+          pendingAchievement: null,
+          showCalendar: false,
+          guideStep: 0,
+          guideSimulateFruiting: false,
+        })
+        get().showToast('账号已注销，花园会想念你', 'info')
+        useUserStore.setState({
+          avatarId: DEFAULT_AVATAR_ID,
+          nickname: defaultData.nickname,
+        })
       },
 
       setGuideStep: (step) => set({ guideStep: step }),
