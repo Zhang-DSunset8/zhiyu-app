@@ -1,19 +1,47 @@
 import { useState, useRef, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useAppStore } from '../store/useAppStore'
 import { MOOD_EMOJIS, type MoodEmoji } from '../types'
+import { MOOD_STICKERS, moodStickerById } from '../data/moodStickers'
 import { SELF_CARE_QUOTES, SELF_CARE_TASKS, TOPICS } from '../data/content'
 import { formatDate, todayKey } from '../utils/date'
 import { ConfirmDialog } from '../components/Modal'
-import { PageShell, PageHeader, GlassCard, SectionTitle } from '../components/ui/PageLayout'
+import { PageShell, PageHeader, GlassCard } from '../components/ui/PageLayout'
+
+const moodSpring = { type: 'spring' as const, stiffness: 520, damping: 22 }
+const rewardSpring = { type: 'spring' as const, stiffness: 320, damping: 24, mass: 0.85 }
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" aria-hidden>
+      <path
+        d="M2.5 6.2 4.8 8.5 9.5 3.5"
+        stroke="white"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function JournalSectionTitle({ icon, title }: { icon: string; title: string }) {
+  return (
+    <h2 className="mb-5 flex items-center gap-2.5 text-[15px] font-medium tracking-wide text-orchard-700/90">
+      <span className="text-base opacity-75">{icon}</span>
+      <span className="border-b border-dashed border-orchard-200/70 pb-0.5">{title}</span>
+    </h2>
+  )
+}
 
 export function DiscoverPage() {
   const [topicId, setTopicId] = useState<string | null>(null)
   const topic = TOPICS.find((t) => t.id === topicId)
 
   return (
-    <PageShell className="relative pb-4">
+    <PageShell className="relative pb-6">
       <PageHeader title="发现" subtitle="记录心情，关怀自己" />
-      <div className="px-5 space-y-4 pb-4">
+      <div className="space-y-6 px-5 pb-6">
         <MoodDiaryCard />
         <SelfCareCard />
         <TopicCard onSelect={setTopicId} />
@@ -77,73 +105,147 @@ function MoodDiaryCard() {
 
   const todayDiary = moodDiaries.find((d) => d.date === todayKey())
 
+  const handleSubmit = () => {
+    if (!content.trim()) {
+      useAppStore.getState().showToast('写点什么吧', 'info')
+      return
+    }
+    saveMoodDiary(emoji, content.trim())
+    setContent('')
+  }
+
   return (
-    <GlassCard>
-      <SectionTitle icon="📝" title="心情日记" />
-      <div className="flex gap-1.5 mb-4 justify-between">
-        {MOOD_EMOJIS.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => setEmoji(m.id)}
-            className={`flex-1 flex flex-col items-center py-2 rounded-xl transition-all duration-200 ${
-              emoji === m.id ? 'bg-orchard-100 ring-2 ring-orchard-300 scale-105' : 'hover:bg-orchard-50/50'
-            }`}
-          >
-            <span className="text-2xl">{m.emoji}</span>
-            <span className="text-[9px] text-ink-muted mt-0.5">{m.label}</span>
-          </button>
-        ))}
+    <GlassCard className="!p-6">
+      <JournalSectionTitle icon="📝" title="心情日记" />
+
+      <div className="mb-6 flex justify-between gap-1 pt-1">
+        {MOOD_STICKERS.map((m) => {
+          const selected = emoji === m.id
+          return (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setEmoji(m.id)}
+              className="relative flex flex-1 flex-col items-center pb-2"
+              aria-pressed={selected}
+              aria-label={m.label}
+            >
+              <motion.img
+                src={m.src}
+                alt={m.label}
+                draggable={false}
+                animate={{
+                  y: selected ? -6 : 0,
+                  opacity: selected ? 1 : 0.5,
+                }}
+                transition={moodSpring}
+                className={`h-10 w-10 object-contain ${selected ? 'grayscale-0' : 'grayscale-[20%]'}`}
+              />
+              <motion.span
+                aria-hidden
+                animate={{
+                  opacity: selected ? 1 : 0,
+                  scale: selected ? 1 : 0.4,
+                }}
+                transition={{ duration: 0.2 }}
+                className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-orchard-400/40 blur-[0.5px]"
+              />
+              <span className="mt-1.5 text-[9px] text-ink-muted/80">{m.label}</span>
+            </button>
+          )
+        })}
       </div>
 
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="记录今日心情或事件…"
-        className="w-full border border-orchard-100 rounded-2xl p-4 text-sm resize-none h-24 bg-orchard-50/30 focus:outline-none focus:ring-2 focus:ring-orchard-200 focus:bg-white transition-all"
+        className="h-24 w-full resize-none rounded-2xl bg-[#FDFBF7] p-4 text-sm leading-relaxed text-ink shadow-[inset_0_2px_8px_rgba(160,145,120,0.07)] transition-shadow focus:outline-none focus:shadow-[inset_0_2px_10px_rgba(160,145,120,0.1)]"
       />
 
-      <button onClick={() => {
-        if (!content.trim()) { useAppStore.getState().showToast('写点什么吧', 'info'); return }
-        saveMoodDiary(emoji, content.trim())
-        setContent('')
-      }} className="w-full mt-3 py-3 btn-primary text-sm">
-        {todayDiary ? '更新今日心情' : '提交心情'}
-      </button>
+      <div className="mt-5 flex justify-center">
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.96 }}
+          transition={moodSpring}
+          onClick={handleSubmit}
+          className="rounded-full bg-gradient-to-r from-[#b5cdb0] to-[#9bb896] px-7 py-2 text-[13px] font-medium text-white/95 shadow-[0_2px_10px_rgba(111,165,106,0.2)]"
+        >
+          {todayDiary ? '更新今日心情' : '提交心情'}
+        </motion.button>
+      </div>
 
       {moodDiaries.length > 0 && (
-        <button onClick={() => setShowHistory(!showHistory)} className="w-full mt-3 text-sm text-orchard-600 font-medium">
+        <button
+          type="button"
+          onClick={() => setShowHistory(!showHistory)}
+          className="mt-5 w-full text-center text-[13px] font-medium text-orchard-600/80"
+        >
           {showHistory ? '收起历史 ↑' : `查看历史 (${moodDiaries.length}) ↓`}
         </button>
       )}
 
-      {showHistory && (
-        <div className="mt-3 space-y-2">
-          {moodDiaries.map((d) => {
-            const em = MOOD_EMOJIS.find((m) => m.id === d.emoji)?.emoji ?? '😊'
-            const off = offset[d.id] ?? 0
-            return (
-              <div
-                key={d.id}
-                onTouchStart={(e) => { startX.current = e.touches[0].clientX }}
-                onTouchMove={(e) => setOffset((o) => ({ ...o, [d.id]: Math.min(0, e.touches[0].clientX - startX.current) }))}
-                onTouchEnd={() => { if (off < -80) setSwipeId(d.id); setOffset((o) => ({ ...o, [d.id]: 0 })) }}
-              >
-                <div className="py-3 px-4 bg-orchard-50/60 rounded-xl text-sm" style={{ transform: `translateX(${off}px)` }}>
-                  <span className="mr-2">{em}</span>
-                  <span className="text-ink-muted mr-2 text-xs">{formatDate(d.date)}</span>
-                  <span className="text-ink">{d.content}</span>
+      <AnimatePresence>
+        {showHistory && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-4 space-y-2.5 overflow-hidden"
+          >
+            {moodDiaries.map((d) => {
+              const sticker = moodStickerById(d.emoji)
+              const off = offset[d.id] ?? 0
+              return (
+                <div
+                  key={d.id}
+                  onTouchStart={(e) => {
+                    startX.current = e.touches[0].clientX
+                  }}
+                  onTouchMove={(e) =>
+                    setOffset((o) => ({ ...o, [d.id]: Math.min(0, e.touches[0].clientX - startX.current) }))
+                  }
+                  onTouchEnd={() => {
+                    if (off < -80) setSwipeId(d.id)
+                    setOffset((o) => ({ ...o, [d.id]: 0 }))
+                  }}
+                >
+                  <div
+                    className="rounded-xl bg-[#FDFBF7] px-4 py-3 text-sm shadow-[inset_0_1px_4px_rgba(160,145,120,0.06)]"
+                    style={{ transform: `translateX(${off}px)` }}
+                  >
+                    <span className="mr-2 inline-flex h-5 w-5 items-center justify-center align-middle">
+                      {sticker ? (
+                        <img
+                          src={sticker.src}
+                          alt={sticker.label}
+                          className="h-full w-full object-contain"
+                          draggable={false}
+                        />
+                      ) : (
+                        <span className="text-sm leading-none">
+                          {MOOD_EMOJIS.find((m) => m.id === d.emoji)?.emoji ?? '😊'}
+                        </span>
+                      )}
+                    </span>
+                    <span className="mr-2 text-xs text-ink-muted/70">{formatDate(d.date)}</span>
+                    <span className="text-ink/90">{d.content}</span>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ConfirmDialog
         open={!!swipeId}
         message="确定删除这条心情日记吗？"
         confirmText="删除"
-        onConfirm={() => { if (swipeId) deleteMoodDiary(swipeId); setSwipeId(null) }}
+        onConfirm={() => {
+          if (swipeId) deleteMoodDiary(swipeId)
+          setSwipeId(null)
+        }}
         onCancel={() => setSwipeId(null)}
       />
     </GlassCard>
@@ -159,32 +261,103 @@ function SelfCareCard() {
     ensureSelfCareContent,
   } = useAppStore()
 
+  const doneToday = lastSelfCareRewardDate === todayKey()
+  const [isCompleted, setIsCompleted] = useState(doneToday)
+  const [showReward, setShowReward] = useState(false)
+
   useEffect(() => {
     ensureSelfCareContent()
   }, [ensureSelfCareContent])
 
+  useEffect(() => {
+    setIsCompleted(doneToday)
+    if (!doneToday) setShowReward(false)
+  }, [doneToday, selfCareTaskIndex])
+
   const quote = SELF_CARE_QUOTES[selfCareQuoteIndex] ?? SELF_CARE_QUOTES[0]
   const task = SELF_CARE_TASKS[selfCareTaskIndex] ?? SELF_CARE_TASKS[0]
-  const doneToday = lastSelfCareRewardDate === todayKey()
+
+  const handleComplete = () => {
+    if (isCompleted || doneToday) return
+    setIsCompleted(true)
+    setShowReward(true)
+    completeSelfCare()
+    window.setTimeout(() => setShowReward(false), 1000)
+  }
 
   return (
-    <GlassCard>
-      <SectionTitle icon="💚" title="自我关怀" />
-      <blockquote className="text-sm text-orchard-700 italic leading-relaxed pl-4 border-l-4 border-orchard-300 mb-4">
-        "{quote}"
-      </blockquote>
-      <div className="bg-gradient-to-r from-orchard-50 to-orchard-100/50 rounded-2xl p-4 mb-4">
-        <p className="text-[10px] text-orchard-500 font-semibold uppercase tracking-wider mb-1">今日任务</p>
-        <p className="text-sm text-orchard-800 font-medium">{task}</p>
+    <GlassCard className="!p-6">
+      <JournalSectionTitle icon="💚" title="自我关怀" />
+
+      <div className="relative mx-1 mb-7 -rotate-1">
+        <div className="rounded-sm border border-[#F0E8D4] bg-[#FFF9E8] px-5 py-5 shadow-[0_3px_12px_rgba(190,170,130,0.12)]">
+          <p className="mb-1 text-[10px] font-medium tracking-widest text-[#B8A88A]/80">每日引言</p>
+          <p
+            className="text-[15px] leading-[1.75] text-[#6B5E4A]/90"
+            style={{ fontFamily: '"Kaiti SC", "STKaiti", KaiTi, "Bradley Hand", cursive' }}
+          >
+            「{quote}」
+          </p>
+        </div>
       </div>
+
+      <p className="mb-3 text-[10px] font-medium tracking-widest text-orchard-500/70">今日任务</p>
+
       <button
-        onClick={completeSelfCare}
-        disabled={doneToday}
-        className={`w-full py-3 rounded-2xl text-sm font-semibold transition-all ${
-          doneToday ? 'bg-gray-100 text-gray-400' : 'btn-primary'
-        }`}
+        type="button"
+        onClick={handleComplete}
+        disabled={isCompleted}
+        className="relative flex w-full items-center gap-3.5 rounded-xl py-2 text-left transition-colors disabled:cursor-default"
       >
-        {doneToday ? '今日已完成 ✓' : '已完成 (+10 果币)'}
+        <motion.span
+          layout
+          animate={
+            isCompleted
+              ? { scale: [1, 1.14, 1], backgroundColor: '#6fa56a', borderColor: 'transparent' }
+              : { scale: 1, backgroundColor: 'rgba(255,255,255,0.6)', borderColor: 'rgba(159,199,154,0.8)' }
+          }
+          transition={moodSpring}
+          className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+        >
+          <AnimatePresence>
+            {isCompleted && (
+              <motion.span
+                key="check"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={moodSpring}
+              >
+                <CheckIcon />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.span>
+
+        <motion.span
+          animate={{
+            color: isCompleted ? '#9ca3af' : '#394534',
+          }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className={`flex-1 text-sm leading-relaxed ${isCompleted ? 'line-through decoration-gray-300' : ''}`}
+        >
+          {task}
+        </motion.span>
+
+        <AnimatePresence>
+          {showReward && (
+            <motion.span
+              key="reward"
+              initial={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 0, y: -30 }}
+              exit={{ opacity: 0 }}
+              transition={rewardSpring}
+              className="pointer-events-none absolute left-7 top-0 text-xs font-semibold text-orchard-500"
+            >
+              +10 果币
+            </motion.span>
+          )}
+        </AnimatePresence>
       </button>
     </GlassCard>
   )
@@ -192,30 +365,30 @@ function SelfCareCard() {
 
 function TopicCard({ onSelect }: { onSelect: (id: string) => void }) {
   return (
-    <GlassCard className="!pb-4">
-      <SectionTitle icon="📚" title="官方专题" />
-      <div className="flex items-stretch gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
-        {TOPICS.map((t) => (
-          <button
+    <GlassCard className="!p-6 !pb-5">
+      <JournalSectionTitle icon="📚" title="官方专题" />
+      <div className="-mx-1 flex items-stretch gap-4 overflow-x-auto px-1 pb-2 scrollbar-hide">
+        {TOPICS.map((t, i) => (
+          <motion.button
             key={t.id}
+            type="button"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06, duration: 0.35 }}
             onClick={() => onSelect(t.id)}
-            className="flex w-44 shrink-0 flex-col overflow-hidden rounded-2xl bg-white text-left shadow-sm transition-shadow hover:shadow-md"
+            className="relative aspect-[3/4] w-36 shrink-0 overflow-hidden rounded-2xl text-left shadow-md"
           >
-            <div className="h-28 w-full shrink-0 overflow-hidden bg-orchard-100">
-              <img
-                src={t.coverImage}
-                alt={t.title}
-                width={176}
-                height={112}
-                className="block h-full w-full object-cover"
-                loading="lazy"
-              />
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${t.coverImage})` }}
+              role="img"
+              aria-label={t.title}
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent px-3.5 pb-4 pt-16">
+              <p className="text-sm font-semibold leading-snug text-white">{t.title}</p>
+              <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-white/80">{t.summary}</p>
             </div>
-            <div className="flex min-h-[4.75rem] flex-1 flex-col p-3">
-              <p className="text-sm font-semibold leading-snug text-orchard-800">{t.title}</p>
-              <p className="mt-1 line-clamp-2 flex-1 text-xs leading-relaxed text-ink-muted">{t.summary}</p>
-            </div>
-          </button>
+          </motion.button>
         ))}
       </div>
     </GlassCard>

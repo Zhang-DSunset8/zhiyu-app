@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Broom } from '../icons/Broom'
 import {
   IconBrush,
-  IconClear,
   IconEraser,
   IconRedo,
   IconUndo,
@@ -51,6 +51,19 @@ function DockIconButton({
       }`}
     >
       {children}
+    </button>
+  )
+}
+
+function DockClearButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label="整理画布"
+      onClick={onClick}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-emerald-700/80 opacity-60 transition-all hover:bg-white/60 hover:opacity-100 hover:text-emerald-700 active:scale-90 active:opacity-100"
+    >
+      <Broom size={20} strokeWidth={1.5} aria-hidden />
     </button>
   )
 }
@@ -144,11 +157,6 @@ export function FloatingToolDock({
               />
             </div>
 
-            <div className="flex justify-center gap-2 border-t border-white/60 pt-3">
-              <DockIconButton label="重做" disabled={!canRedo} onClick={onRedo}>
-                <IconRedo />
-              </DockIconButton>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -189,9 +197,10 @@ export function FloatingToolDock({
         <DockIconButton label="撤销" disabled={!canUndo} onClick={onUndo}>
           <IconUndo />
         </DockIconButton>
-        <DockIconButton label="清空画布" onClick={onClear}>
-          <IconClear />
+        <DockIconButton label="重做" disabled={!canRedo} onClick={onRedo}>
+          <IconRedo />
         </DockIconButton>
+        <DockClearButton onClick={onClear} />
       </div>
     </motion.div>
   )

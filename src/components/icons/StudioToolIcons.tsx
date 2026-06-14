@@ -109,6 +109,21 @@ export function IconSave({ className }: IconProps) {
   )
 }
 
+/** 保存成功 — 勾选 */
+export function IconCheck({ className }: IconProps) {
+  return (
+    <svg className={className} width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M5 12.5 L10 17.5 L19 7.5"
+        stroke={stroke}
+        strokeWidth={2.25}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 export function IconPalette({ className }: IconProps) {
   return (
     <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>

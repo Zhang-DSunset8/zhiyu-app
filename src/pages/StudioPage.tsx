@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useAppStore } from '../store/useAppStore'
 import { defaultPaintingTitle } from '../utils/date'
 import { ConfirmDialog, Modal } from '../components/Modal'
+import { ClearCanvasConfirm } from '../components/studio/ClearCanvasConfirm'
 import { FloatingToolDock } from '../components/studio/FloatingToolDock'
 import { SaveFab } from '../components/studio/SaveFab'
 import { StudioGallery } from '../components/studio/StudioGallery'
@@ -17,6 +18,8 @@ export function StudioPage() {
   const [swipeDeleteId, setSwipeDeleteId] = useState<string | null>(null)
   const [showSave, setShowSave] = useState(false)
   const [showClear, setShowClear] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
+  const [saveSuccessTick, setSaveSuccessTick] = useState(0)
   const [title, setTitle] = useState(defaultPaintingTitle())
 
   const paint = usePaintCanvas()
@@ -34,13 +37,30 @@ export function StudioPage() {
   const confirmSave = () => {
     savePainting(paint.exportDataUrl(), title || defaultPaintingTitle())
     setShowSave(false)
+    setSaveSuccessTick((t) => t + 1)
+  }
+
+  const handleConfirmClear = () => {
+    setShowClear(false)
+    setIsClearing(true)
+    window.setTimeout(() => {
+      paint.clear()
+      setIsClearing(false)
+    }, 500)
   }
 
   return (
     <div className="relative h-full overflow-hidden bg-[#FCFAF8]">
-      <div
+      <motion.div
         ref={paint.containerRef}
-        className={`absolute inset-0 ${showGallery ? 'invisible pointer-events-none' : ''}`}
+        animate={
+          isClearing
+            ? { opacity: 0, scale: 0.9 }
+            : { opacity: 1, scale: 1 }
+        }
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        style={{ transformOrigin: 'center center' }}
+        className={`absolute inset-0 ${showGallery || isClearing ? 'pointer-events-none' : ''} ${showGallery ? 'invisible' : ''}`}
         aria-hidden={showGallery}
       >
         <canvas
@@ -54,7 +74,7 @@ export function StudioPage() {
           onTouchMove={paint.draw}
           onTouchEnd={paint.endDraw}
         />
-      </div>
+      </motion.div>
 
       {!showGallery && (
         <>
@@ -76,7 +96,7 @@ export function StudioPage() {
             onClear={() => setShowClear(true)}
           />
 
-          <SaveFab onClick={handleSave} />
+          <SaveFab onClick={handleSave} isDrawing={paint.isDrawing} successTick={saveSuccessTick} />
         </>
       )}
 
@@ -131,15 +151,10 @@ export function StudioPage() {
         </button>
       </Modal>
 
-      <ConfirmDialog
+      <ClearCanvasConfirm
         open={showClear}
-        message="新的空白，新的开始"
-        confirmText="清空画布"
-        onConfirm={() => {
-          paint.clear()
-          setShowClear(false)
-        }}
         onCancel={() => setShowClear(false)}
+        onConfirm={handleConfirmClear}
       />
 
       <ConfirmDialog
