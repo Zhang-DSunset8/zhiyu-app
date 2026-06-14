@@ -1,7 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from 'framer-motion'
 import { useAppStore } from '../store/useAppStore'
-import { MOOD_EMOJIS, type MoodEmoji } from '../types'
+import { MOOD_EMOJIS, type MoodEmoji, type Topic } from '../types'
 import { MOOD_STICKERS, moodStickerById } from '../data/moodStickers'
 import { SELF_CARE_QUOTES, SELF_CARE_TASKS, TOPICS } from '../data/content'
 import { formatDate, todayKey } from '../utils/date'
@@ -10,6 +16,8 @@ import { PageShell, PageHeader, GlassCard } from '../components/ui/PageLayout'
 
 const moodSpring = { type: 'spring' as const, stiffness: 520, damping: 22 }
 const rewardSpring = { type: 'spring' as const, stiffness: 320, damping: 24, mass: 0.85 }
+const TOPIC_CARD_WIDTH = 144
+const TOPIC_CARD_GAP = 16
 
 function CheckIcon() {
   return (
@@ -39,12 +47,12 @@ export function DiscoverPage() {
   const topic = TOPICS.find((t) => t.id === topicId)
 
   return (
-    <PageShell className="relative pb-6">
+    <PageShell className="relative bg-[#FCFAF8] pb-6">
       <PageHeader title="发现" subtitle="记录心情，关怀自己" />
       <div className="space-y-6 px-5 pb-6">
         <MoodDiaryCard />
         <SelfCareCard />
-        <TopicCard onSelect={setTopicId} />
+        <TopicSection onSelect={setTopicId} />
       </div>
 
       {topic && <TopicDetailOverlay topic={topic} onClose={() => setTopicId(null)} />}
@@ -363,34 +371,127 @@ function SelfCareCard() {
   )
 }
 
-function TopicCard({ onSelect }: { onSelect: (id: string) => void }) {
+function TopicTypeBadge({ type }: { type: Topic['type'] }) {
   return (
-    <GlassCard className="!p-6 !pb-5">
-      <JournalSectionTitle icon="📚" title="官方专题" />
-      <div className="-mx-1 flex items-stretch gap-4 overflow-x-auto px-1 pb-2 scrollbar-hide">
-        {TOPICS.map((t, i) => (
-          <motion.button
-            key={t.id}
-            type="button"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06, duration: 0.35 }}
-            onClick={() => onSelect(t.id)}
-            className="relative aspect-[3/4] w-36 shrink-0 overflow-hidden rounded-2xl text-left shadow-md"
-          >
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${t.coverImage})` }}
-              role="img"
-              aria-label={t.title}
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent px-3.5 pb-4 pt-16">
-              <p className="text-sm font-semibold leading-snug text-white">{t.title}</p>
-              <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-white/80">{t.summary}</p>
-            </div>
-          </motion.button>
-        ))}
+    <span
+      className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full border border-white/45 bg-white/25 text-white shadow-sm backdrop-blur-md"
+      aria-hidden
+    >
+      {type === 'audio' ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 14h3a2 2 0 0 0 2-2V6a2 2 0 0 1 2-2h2" />
+          <path d="M21 14h-3a2 2 0 0 1-2-2V6a2 2 0 0 0-2-2h-2" />
+          <path d="M3 18v-4" />
+          <path d="M21 18v-4" />
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 7v14" />
+          <path d="M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3" />
+          <path d="M5 7v11c0 1.7 3.1 3 7 3s7-1.3 7-3V7" />
+        </svg>
+      )}
+    </span>
+  )
+}
+
+function TopicMagazineCard({
+  topic,
+  index,
+  scrollX,
+  containerWidth,
+  onSelect,
+}: {
+  topic: Topic
+  index: number
+  scrollX: ReturnType<typeof useMotionValue<number>>
+  containerWidth: ReturnType<typeof useMotionValue<number>>
+  onSelect: (id: string) => void
+}) {
+  const rotate = useTransform([scrollX, containerWidth], ([x, w]: number[]) => {
+    const cardCenter = index * (TOPIC_CARD_WIDTH + TOPIC_CARD_GAP) + TOPIC_CARD_WIDTH / 2
+    const viewCenter = x + w / 2
+    const offset = (cardCenter - viewCenter) / TOPIC_CARD_WIDTH
+    return Math.max(-5, Math.min(5, offset * -2.8))
+  })
+  const rotateSpring = useSpring(rotate, { stiffness: 260, damping: 28 })
+
+  return (
+    <motion.button
+      type="button"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.06, duration: 0.35 }}
+      style={{ rotate: rotateSpring }}
+      onClick={() => onSelect(topic.id)}
+      className="relative aspect-[3/4] w-36 shrink-0 snap-center overflow-hidden rounded-3xl text-left shadow-lg"
+    >
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${topic.coverImage})` }}
+        role="img"
+        aria-label={topic.title}
+      />
+      <TopicTypeBadge type={topic.type} />
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent px-3.5 pb-4 pt-14">
+        <p className="text-sm font-semibold leading-snug text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]">
+          {topic.title}
+        </p>
+        <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-white/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
+          {topic.summary}
+        </p>
       </div>
-    </GlassCard>
+    </motion.button>
+  )
+}
+
+function TopicCarousel({ onSelect }: { onSelect: (id: string) => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollX = useMotionValue(0)
+  const containerWidth = useMotionValue(0)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+
+    const sync = () => {
+      scrollX.set(el.scrollLeft)
+      containerWidth.set(el.clientWidth)
+    }
+
+    sync()
+    el.addEventListener('scroll', sync, { passive: true })
+    window.addEventListener('resize', sync)
+    return () => {
+      el.removeEventListener('scroll', sync)
+      window.removeEventListener('resize', sync)
+    }
+  }, [scrollX, containerWidth])
+
+  return (
+    <div
+      ref={scrollRef}
+      className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-3 pr-10 scrollbar-hide snap-x snap-proximity"
+    >
+      {TOPICS.map((t, i) => (
+        <TopicMagazineCard
+          key={t.id}
+          topic={t}
+          index={i}
+          scrollX={scrollX}
+          containerWidth={containerWidth}
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  )
+}
+
+function TopicSection({ onSelect }: { onSelect: (id: string) => void }) {
+  return (
+    <section className="pb-1">
+      <JournalSectionTitle icon="📚" title="官方专题" />
+      <TopicCarousel onSelect={onSelect} />
+    </section>
   )
 }
