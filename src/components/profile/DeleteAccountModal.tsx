@@ -1,4 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { createPortal } from 'react-dom'
+
+function modalHost() {
+  return document.getElementById('app-shell') ?? document.body
+}
 
 interface DeleteAccountModalProps {
   open: boolean
@@ -7,7 +12,7 @@ interface DeleteAccountModalProps {
 }
 
 export function DeleteAccountModal({ open, onStay, onConfirmDelete }: DeleteAccountModalProps) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -15,7 +20,7 @@ export function DeleteAccountModal({ open, onStay, onConfirmDelete }: DeleteAcco
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          className="fixed inset-0 z-[90] flex items-center justify-center px-6"
+          className="fixed inset-0 z-[60] mx-auto flex max-w-lg items-center justify-center px-6"
         >
           <motion.button
             type="button"
@@ -58,6 +63,7 @@ export function DeleteAccountModal({ open, onStay, onConfirmDelete }: DeleteAcco
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    modalHost(),
   )
 }

@@ -1,3 +1,9 @@
+import { createPortal } from 'react-dom'
+
+function modalHost() {
+  return document.getElementById('app-shell') ?? document.body
+}
+
 interface ModalProps {
   open: boolean
   onClose: () => void
@@ -7,8 +13,8 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, children }: ModalProps) {
   if (!open) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] mx-auto flex max-w-lg items-center justify-center p-5">
       <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={onClose} />
       <div className="relative glass-card-strong rounded-3xl max-w-sm w-full p-6 animate-[fadeIn_0.3s_ease]">
         {title && (
@@ -16,7 +22,8 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         )}
         {children}
       </div>
-    </div>
+    </div>,
+    modalHost(),
   )
 }
 
@@ -38,8 +45,8 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   if (!open) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] mx-auto flex max-w-lg items-center justify-center p-5">
       <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative glass-card-strong rounded-3xl max-w-sm w-full p-6 animate-[fadeIn_0.3s_ease]">
         <p className="text-ink-muted leading-relaxed mb-6 text-center">{message}</p>
@@ -52,6 +59,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    modalHost(),
   )
 }

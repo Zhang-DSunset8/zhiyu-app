@@ -1,19 +1,19 @@
 import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { FAQ_ITEMS } from '../../data/content'
-import { GroupListItem, ProfileSubPanel, SettingsGroupCard, SubPageHeader } from './profileShared'
+import { useAppStore } from '../../store/useAppStore'
+import { GroupListItem, SettingsGroupCard, SubPageHeader } from './profileShared'
 
 interface ProfileHelpViewProps {
-  open: boolean
   onBack: () => void
-  onOpenFeedback: () => void
 }
 
-export function ProfileHelpView({ open, onBack, onOpenFeedback }: ProfileHelpViewProps) {
+export function ProfileHelpView({ onBack }: ProfileHelpViewProps) {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
+  const showToast = useAppStore((s) => s.showToast)
 
   return (
-    <ProfileSubPanel open={open}>
+    <>
       <SubPageHeader title="帮助与反馈" onBack={onBack} />
 
       <div className="space-y-4 px-5 pb-10">
@@ -40,9 +40,13 @@ export function ProfileHelpView({ open, onBack, onOpenFeedback }: ProfileHelpVie
               )}
             </div>
           ))}
-          <GroupListItem label="意见反馈" onClick={onOpenFeedback} showChevron />
+          <GroupListItem
+            label="意见反馈"
+            onClick={() => showToast('反馈通道即将开启', 'info')}
+            showChevron
+          />
         </SettingsGroupCard>
       </div>
-    </ProfileSubPanel>
+    </>
   )
 }

@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { LoginMethod } from '../../types'
 
@@ -11,32 +10,8 @@ export const subPageEnter = { x: '100%', opacity: 0 }
 export const subPageCenter = { x: 0, opacity: 1 }
 export const subPageExit = { x: '100%', opacity: 0 }
 
-export function ProfileSubPanel({
-  open,
-  zIndex = 60,
-  children,
-}: {
-  open: boolean
-  zIndex?: number
-  children: ReactNode
-}) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={subPageEnter}
-          animate={subPageCenter}
-          exit={subPageExit}
-          transition={subPageTransition}
-          style={{ zIndex }}
-          className="page-shell fixed inset-0 mx-auto flex h-full max-w-lg flex-col overflow-y-auto bg-[#FCFAF8]"
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
+export const subPageClassName =
+  'fixed inset-0 z-50 mx-auto flex h-full w-full max-w-lg flex-col overflow-y-auto bg-[#FCFAF8]'
 
 export function maskPhone(phone: string) {
   if (!phone) return '未绑定手机号'

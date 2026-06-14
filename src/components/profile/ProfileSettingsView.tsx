@@ -2,21 +2,18 @@ import { useRef } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import {
   GroupListItem,
-  ProfileSubPanel,
   SettingsGroupCard,
   SubPageHeader,
   Toggle,
 } from './profileShared'
 
 interface ProfileSettingsViewProps {
-  open: boolean
   onBack: () => void
   onOpenAccount: () => void
   onLogout: () => void
 }
 
 export function ProfileSettingsView({
-  open,
   onBack,
   onOpenAccount,
   onLogout,
@@ -53,7 +50,7 @@ export function ProfileSettingsView({
   }
 
   return (
-    <ProfileSubPanel open={open}>
+    <>
       <SubPageHeader title="设置" onBack={onBack} />
 
       <div className="flex flex-1 flex-col px-5 pb-10">
@@ -85,6 +82,6 @@ export function ProfileSettingsView({
           退出登录
         </button>
       </div>
-    </ProfileSubPanel>
+    </>
   )
 }
