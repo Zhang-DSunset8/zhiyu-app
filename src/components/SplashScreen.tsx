@@ -7,8 +7,8 @@ interface SplashScreenProps {
 
 /** Logo 图片路径 */
 const SPLASH_LOGO_SRC = '/logo.png'
-/** 底部繁花插图路径 — 接入资产后填入，如 `/splash/bottom.png` */
-const SPLASH_BOTTOM_SRC = ''
+/** 底部花草插画路径 — 接入资产后填入，如 `/splash/bottom-flowers.png` */
+const SPLASH_BOTTOM_FLOWERS_SRC = ''
 
 const logoVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -44,29 +44,46 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   return (
     <div className="fixed inset-0 z-[100] mx-auto h-screen w-full max-w-lg overflow-hidden bg-gradient-to-b from-[#FEFCE8] via-white to-white">
+      {/* 弥散光斑 — 背景层次 */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-20 -top-20 h-96 w-96 rounded-full bg-yellow-100/40 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-emerald-50/50 blur-3xl"
+      />
+
       <motion.div
         initial="hidden"
         animate="show"
-        className="relative z-10 flex h-full flex-col items-center justify-center px-10 pb-20"
+        className="relative z-10 flex h-full flex-col items-center justify-center px-10 pb-[140px]"
       >
         <div className="relative flex items-center justify-center">
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-200/50 blur-2xl"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          />
+          <motion.div variants={logoVariants} className="relative">
+            {/* Logo 呼吸浮动 */}
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="relative flex h-32 w-32 items-center justify-center"
+            >
+              {/* Logo 后方光晕 — 发光植物感 */}
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-200/50 blur-2xl"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.35, 0.65, 0.35] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              />
 
-          <motion.div
-            variants={logoVariants}
-            className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
-          >
-            <img
-              src={SPLASH_LOGO_SRC}
-              alt="植愈"
-              className="h-full w-full object-cover"
-              draggable={false}
-            />
+              <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+                <img
+                  src={SPLASH_LOGO_SRC}
+                  alt="植愈"
+                  className="h-full w-full object-cover"
+                  draggable={false}
+                />
+              </div>
+            </motion.div>
           </motion.div>
         </div>
 
@@ -85,22 +102,22 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         </motion.p>
       </motion.div>
 
+      {/* 底部锚点 — 预留花草插画位 */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5, duration: 1.5, ease: 'easeOut' }}
-        className="absolute bottom-0 w-full"
+        className="absolute bottom-0 z-[5] flex h-[120px] w-full items-end justify-center bg-gradient-to-t from-emerald-50/80 to-transparent"
         aria-hidden
       >
-        {SPLASH_BOTTOM_SRC ? (
+        {SPLASH_BOTTOM_FLOWERS_SRC ? (
           <img
-            src={SPLASH_BOTTOM_SRC}
+            src={SPLASH_BOTTOM_FLOWERS_SRC}
             alt=""
-            className="block min-h-[38vh] w-full object-cover object-bottom"
+            className="h-full w-full object-contain object-bottom"
             draggable={false}
           />
         ) : null}
-        <div className="h-[40vh] w-full bg-gradient-to-t from-[#fce7f3]/40 via-[#fef9c3]/25 to-transparent" />
       </motion.div>
     </div>
   )

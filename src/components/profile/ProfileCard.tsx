@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { BookOpen, Coins, Flower2, Palette } from 'lucide-react'
 import { useUserStore } from '../../store/useUserStore'
 import { useAppStore } from '../../store/useAppStore'
 import type { AvatarId } from '../../types'
@@ -145,14 +146,18 @@ export function ProfileCard({
         </div>
 
         <div className="mt-6 grid grid-cols-4 gap-2">
-          {[
-            { label: '果币', value: fruitCoins, icon: '🪙' },
-            { label: '画作', value: paintingCount, icon: '🎨' },
-            { label: '冥想', value: meditationMinutes, icon: '🧘' },
-            { label: '日记', value: moodDiaryCount, icon: '📝' },
-          ].map((s) => (
+          {(
+            [
+              { label: '果币', value: fruitCoins, Icon: Coins },
+              { label: '画作', value: paintingCount, Icon: Palette },
+              { label: '冥想', value: meditationMinutes, Icon: Flower2 },
+              { label: '日记', value: moodDiaryCount, Icon: BookOpen },
+            ] as const
+          ).map((s) => (
             <div key={s.label} className="profile-stat-pill rounded-2xl py-3 text-center">
-              <div className="mb-0.5 text-sm">{s.icon}</div>
+              <div className="mb-1 flex justify-center">
+                <s.Icon size={16} strokeWidth={1.75} className="text-gray-400" aria-hidden />
+              </div>
               <p className="text-lg font-bold text-[#6b6358]">{s.value}</p>
               <p className="text-[10px] text-[#9a9288]">{s.label}</p>
             </div>

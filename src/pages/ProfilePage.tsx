@@ -1,37 +1,18 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { APP_VERSION } from '../types'
-import type { LoginMethod } from '../types'
-import { ACHIEVEMENTS, FAQ_ITEMS } from '../data/content'
+import { ACHIEVEMENTS } from '../data/content'
 import { ConfirmDialog, Modal } from '../components/Modal'
-import { PageShell, PageHeader, GlassCard, SectionTitle } from '../components/ui/PageLayout'
+import { PageShell, PageHeader, GlassCard } from '../components/ui/PageLayout'
 import { ProfileCard } from '../components/profile/ProfileCard'
 import { useUserStore } from '../store/useUserStore'
 import { AchievementOverview } from '../components/achievements/AchievementOverview'
 import { AchievementList } from '../components/achievements/AchievementList'
 import { DeleteAccountModal } from '../components/profile/DeleteAccountModal'
-
-function maskPhone(phone: string) {
-  if (!phone) return '未绑定手机号'
-  if (phone.length !== 11) return phone
-  return phone.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2')
-}
-
-function getAccountInfo(loginMethod: LoginMethod | null, phone: string) {
-  const method = loginMethod ?? (phone ? 'phone' : null)
-  switch (method) {
-    case 'wechat':
-      return { label: '微信账号', value: '已授权登录', badge: '微信' }
-    case 'qq':
-      return { label: 'QQ 账号', value: '已授权登录', badge: 'QQ' }
-    case 'apple':
-      return { label: 'Apple 账号', value: '已授权登录', badge: 'Apple' }
-    case 'phone':
-      return { label: '登录手机号', value: maskPhone(phone), badge: '手机号' }
-    default:
-      return { label: '登录方式', value: '未知', badge: '已登录' }
-  }
-}
+import { ProfileAccountView } from '../components/profile/ProfileAccountView'
+import { ProfileHelpView } from '../components/profile/ProfileHelpView'
+import { ProfileSettingsView } from '../components/profile/ProfileSettingsView'
+import { GroupListItem, type ProfileView } from '../components/profile/profileShared'
 
 export function ProfilePage() {
   const store = useAppStore()
@@ -39,161 +20,82 @@ export function ProfilePage() {
   const deleteAccount = useAppStore((s) => s.deleteAccount)
   const setNickname = useUserStore((s) => s.setNickname)
 
+  const [view, setView] = useState<ProfileView>('main')
   const [showAchievements, setShowAchievements] = useState(false)
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [feedbackContent, setFeedbackContent] = useState('')
   const [feedbackContact, setFeedbackContact] = useState('')
   const [clearConfirm, setClearConfirm] = useState(false)
   const [logoutConfirm, setLogoutConfirm] = useState(false)
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
 
   const recentAchievements = ACHIEVEMENTS.filter((a) => store.achievements.includes(a.id)).slice(-3).reverse()
 
-  const handleExport = () => {
-    const json = store.exportData()
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `emotion-orchard-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-    store.showToast('数据已导出')
-  }
-
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const ok = store.importData(reader.result as string)
-      store.showToast(ok ? '数据已恢复' : '文件格式错误', ok ? 'success' : 'error')
-    }
-    reader.readAsText(file)
-    e.target.value = ''
-  }
-
-  const accountInfo = getAccountInfo(store.loginMethod, store.phone)
-
   return (
-    <PageShell className="relative bg-[#FCFAF8] pb-6">
-      <PageHeader title="我的" subtitle={store.nickname} />
+    <PageShell className="relative bg-[#FCFAF8] pb-8">
+      {/* Level 1 — 我的主页 */}
+      {view === 'main' && (
+        <>
+          <PageHeader title="我的" subtitle={store.nickname} />
 
-      <div className="space-y-4 px-5">
-        <ProfileCard
-          phone={store.phone}
-          signature={store.signature}
-          fruitCoins={store.fruitCoins}
-          paintingCount={store.paintings.length}
-          meditationMinutes={store.totalMeditationMinutes}
-          moodDiaryCount={store.moodDiaries.length}
-          onUpdateNickname={(name) => {
-            setNickname(name)
-            store.updateProfile({ nickname: name })
-          }}
-          onUpdateSignature={(sig) => store.updateProfile({ signature: sig })}
-        />
+          <div className="space-y-4 px-5">
+            <ProfileCard
+              phone={store.phone}
+              signature={store.signature}
+              fruitCoins={store.fruitCoins}
+              paintingCount={store.paintings.length}
+              meditationMinutes={store.totalMeditationMinutes}
+              moodDiaryCount={store.moodDiaries.length}
+              onUpdateNickname={(name) => {
+                setNickname(name)
+                store.updateProfile({ nickname: name })
+              }}
+              onUpdateSignature={(sig) => store.updateProfile({ signature: sig })}
+            />
 
-        <GlassCard>
-          <SectionTitle icon="👤" title="账号" />
-          <div className="mb-4 flex items-center justify-between rounded-2xl bg-[#F8F9FA] px-4 py-3.5">
-            <div>
-              <p className="text-[10px] font-medium tracking-wide text-ink-muted">{accountInfo.label}</p>
-              <p className="mt-0.5 text-sm font-medium text-orchard-800">{accountInfo.value}</p>
-            </div>
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-medium text-emerald-600">
-              {accountInfo.badge}
-            </span>
+            <GlassCard className="!p-4">
+              <AchievementOverview
+                recent={recentAchievements}
+                onViewAll={() => setShowAchievements(true)}
+              />
+            </GlassCard>
+
+            <GlassCard className="!px-4 !py-0">
+              <GroupListItem
+                label="帮助与反馈"
+                onClick={() => setView('help')}
+                showChevron
+              />
+              <GroupListItem label="设置" onClick={() => setView('settings')} showChevron />
+            </GlassCard>
+
+            <p className="py-2 text-center text-xs text-gray-400/60">{APP_VERSION}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setLogoutConfirm(true)}
-            className="w-full rounded-full border border-emerald-100 py-3 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50/80"
-          >
-            退出登录
-          </button>
-          <button
-            type="button"
-            onClick={() => setDeleteAccountOpen(true)}
-            className="mt-4 w-full text-xs text-gray-400/60 transition-colors hover:text-gray-500"
-          >
-            注销账号
-          </button>
-        </GlassCard>
+        </>
+      )}
 
-        <GlassCard>
-          <AchievementOverview
-            recent={recentAchievements}
-            onViewAll={() => setShowAchievements(true)}
-          />
-        </GlassCard>
+      {/* Level 2 — 设置 */}
+      <ProfileSettingsView
+        open={view === 'settings' || view === 'account'}
+        onBack={() => setView('main')}
+        onOpenAccount={() => setView('account')}
+        onLogout={() => setLogoutConfirm(true)}
+      />
 
-        <GlassCard>
-          <SectionTitle icon="⚙️" title="偏好设置" />
-          <SettingRow label="震动反馈">
-            <Toggle checked={store.vibrationEnabled} onChange={store.setVibrationEnabled} />
-          </SettingRow>
-        </GlassCard>
+      {/* Level 2 — 帮助与反馈 */}
+      <ProfileHelpView
+        open={view === 'help'}
+        onBack={() => setView('main')}
+        onOpenFeedback={() => setFeedbackOpen(true)}
+      />
 
-        <GlassCard>
-          <SectionTitle icon="❓" title="帮助中心" />
-          {FAQ_ITEMS.map((item, i) => (
-            <div key={i} className="border-b border-orchard-50 last:border-0">
-              <button
-                type="button"
-                onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
-                className="flex w-full items-center justify-between py-3.5 text-left text-sm font-medium text-orchard-800"
-              >
-                {item.q}
-                <span className="text-xs text-orchard-400">{expandedFaq === i ? '▲' : '▼'}</span>
-              </button>
-              {expandedFaq === i && (
-                <p className="pb-3 text-sm leading-relaxed text-ink-muted">{item.a}</p>
-              )}
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => setFeedbackOpen(true)}
-            className="btn-secondary mt-3 w-full py-3 text-sm text-orchard-600"
-          >
-            意见反馈
-          </button>
-        </GlassCard>
-
-        <GlassCard className="space-y-2">
-          <SectionTitle icon="💾" title="数据管理" />
-          <p className="mb-2 text-[11px] leading-relaxed text-ink-muted">
-            备份或恢复你的果园进度、画作与心情记录。清除数据将重置全部本地内容。
-          </p>
-          <button
-            type="button"
-            onClick={handleExport}
-            className="w-full rounded-2xl bg-orchard-50 py-3 text-sm font-medium text-orchard-700 transition-colors hover:bg-orchard-100"
-          >
-            备份数据
-          </button>
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="w-full rounded-2xl bg-orchard-50 py-3 text-sm font-medium text-orchard-700 transition-colors hover:bg-orchard-100"
-          >
-            恢复数据
-          </button>
-          <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
-          <button
-            type="button"
-            onClick={() => setClearConfirm(true)}
-            className="w-full rounded-2xl border border-red-100 py-3 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
-          >
-            清除所有数据
-          </button>
-        </GlassCard>
-
-        <p className="py-3 text-center text-xs text-ink-muted opacity-60">{APP_VERSION}</p>
-      </div>
+      {/* Level 3 — 账号与安全 */}
+      <ProfileAccountView
+        open={view === 'account'}
+        onBack={() => setView('settings')}
+        onClearData={() => setClearConfirm(true)}
+        onDeleteAccount={() => setDeleteAccountOpen(true)}
+      />
 
       <Modal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} title="意见反馈">
         <textarea
@@ -230,6 +132,7 @@ export function ProfilePage() {
         onConfirmDelete={() => {
           deleteAccount()
           setDeleteAccountOpen(false)
+          setView('main')
         }}
       />
 
@@ -240,6 +143,7 @@ export function ProfilePage() {
         onConfirm={() => {
           logout()
           setLogoutConfirm(false)
+          setView('main')
         }}
         onCancel={() => setLogoutConfirm(false)}
       />
@@ -251,6 +155,7 @@ export function ProfilePage() {
         onConfirm={() => {
           store.clearAllData()
           setClearConfirm(false)
+          setView('main')
         }}
         onCancel={() => setClearConfirm(false)}
       />
@@ -263,30 +168,5 @@ export function ProfilePage() {
         />
       )}
     </PageShell>
-  )
-}
-
-function SettingRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-gray-600">{label}</span>
-      {children}
-    </div>
-  )
-}
-
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={`h-6 w-11 rounded-full transition-colors ${checked ? 'bg-orchard-500' : 'bg-gray-200'}`}
-    >
-      <div
-        className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${
-          checked ? 'translate-x-5' : 'translate-x-0.5'
-        }`}
-      />
-    </button>
   )
 }

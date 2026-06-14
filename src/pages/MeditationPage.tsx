@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore'
 import { MEDITATION_COURSES, MEDITATION_CATEGORIES, MEDITATION_SERIES } from '../data/content'
 import type { MeditationCourse } from '../types'
 import { MeditationPlayer } from '../components/MeditationPlayer'
+import { MeditationCourseCard } from '../components/meditation/MeditationCourseCard'
 import { PageShell, PageHeader } from '../components/ui/PageLayout'
 
 export function MeditationPage() {
@@ -90,33 +91,13 @@ export function MeditationPage() {
         ))}
       </div>
 
-      <div className="px-5 space-y-3 pb-4">
+      <div className="space-y-3 px-5 pb-4">
         {filtered.map((course) => (
-          <div
+          <MeditationCourseCard
             key={course.id}
-            className="rounded-2xl p-5 shadow-md overflow-hidden relative"
-            style={{ background: course.sceneGradient }}
-          >
-            <div className="absolute inset-0 bg-black/5" />
-            <div className="relative flex items-start justify-between gap-3">
-              <div className="text-white min-w-0">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-3xl drop-shadow">{course.sceneIcon}</span>
-                  <h3 className="font-bold text-lg drop-shadow-sm">{course.title}</h3>
-                </div>
-                <p className="text-xs opacity-90 mt-1.5 font-medium">
-                  {course.duration} 分钟 · {course.category} · 吸{course.breatheIn}/呼{course.breatheOut}
-                </p>
-                <p className="text-sm opacity-95 mt-2 leading-relaxed">{course.description}</p>
-              </div>
-              <button
-                onClick={() => setPlaying(course)}
-                className="flex-shrink-0 px-5 py-2.5 bg-white text-orchard-700 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform"
-              >
-                开始
-              </button>
-            </div>
-          </div>
+            course={course}
+            onPlay={() => setPlaying(course)}
+          />
         ))}
       </div>
 
