@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore } from './store/useAppStore'
 import { useUserStore } from './store/useUserStore'
 import { parseAvatarId } from './data/avatars'
@@ -6,12 +6,13 @@ import { BottomNav } from './components/BottomNav'
 import { Toast } from './components/Toast'
 import { AchievementPopup } from './components/AchievementPopup'
 import { InsightCalendar } from './components/InsightCalendar'
+import { SplashScreen } from './components/SplashScreen'
 import { OrchardPage } from './pages/OrchardPage'
 import { StudioPage } from './pages/StudioPage'
 import { MeditationPage } from './pages/MeditationPage'
 import { DiscoverPage } from './pages/DiscoverPage'
 import { ProfilePage } from './pages/ProfilePage'
-import { LoginScreen } from './pages/LoginScreen'
+import { Login } from './pages/Login'
 import { OnboardingGuide } from './components/guide/OnboardingGuide'
 import type { TabId } from './types'
 
@@ -24,6 +25,7 @@ const PAGES: Record<TabId, React.ComponentType> = {
 }
 
 export default function App() {
+  const [splashDone, setSplashDone] = useState(false)
   const {
     activeTab, setActiveTab, toast, pendingAchievement,
     loginComplete, guideComplete, nickname, avatarId,
@@ -52,8 +54,9 @@ export default function App() {
       <AchievementPopup achievement={pendingAchievement} />
       <InsightCalendar />
 
-      {!loginComplete && <LoginScreen />}
-      {loginComplete && !guideComplete && <OnboardingGuide />}
+      {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} />}
+      {splashDone && !loginComplete && <Login />}
+      {splashDone && loginComplete && !guideComplete && <OnboardingGuide />}
     </div>
   )
 }

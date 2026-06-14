@@ -5,6 +5,7 @@ import type {
   AvatarId,
   FruitProgress,
   FruitType,
+  LoginMethod,
   MoodEmoji,
   Painting,
   TabId,
@@ -34,6 +35,8 @@ const defaultData: AppData = {
   nickname: '果园旅人',
   signature: '一棵安静的小树',
   avatarId: DEFAULT_AVATAR_ID,
+  phone: '',
+  loginMethod: null,
   fruitCoins: 0,
   harvestCount: 0,
   totalMeditationMinutes: 0,
@@ -116,7 +119,12 @@ interface AppStore extends AppData {
   dismissAchievement: () => void
   setShowCalendar: (show: boolean) => void
 
-  completeLogin: (avatar: AvatarId, nickname: string) => void
+  completeLogin: (
+    avatar: AvatarId,
+    nickname: string,
+    options?: { phone?: string; loginMethod?: LoginMethod },
+  ) => void
+  logout: () => void
   setGuideStep: (step: number) => void
   skipGuide: () => void
   completeGuide: () => void
@@ -168,8 +176,22 @@ export const useAppStore = create<AppStore>()(
       dismissAchievement: () => set({ pendingAchievement: null }),
       setShowCalendar: (show) => set({ showCalendar: show }),
 
-      completeLogin: (avatarId, nickname) => {
-        set({ avatarId, nickname, loginComplete: true, activeTab: 'orchard', guideStep: 0 })
+      completeLogin: (avatarId, nickname, options = {}) => {
+        const { phone = '', loginMethod } = options
+        set({
+          avatarId,
+          nickname,
+          phone,
+          loginMethod: loginMethod ?? (phone ? 'phone' : null),
+          loginComplete: true,
+          activeTab: 'orchard',
+          guideStep: 0,
+        })
+      },
+
+      logout: () => {
+        set({ loginComplete: false, activeTab: 'orchard' })
+        get().showToast('已退出登录', 'info')
       },
 
       setGuideStep: (step) => set({ guideStep: step }),
@@ -375,6 +397,8 @@ export const useAppStore = create<AppStore>()(
           nickname: s.nickname,
           signature: s.signature,
           avatarId: s.avatarId,
+          phone: s.phone,
+          loginMethod: s.loginMethod,
           fruitCoins: s.fruitCoins,
           harvestCount: s.harvestCount,
           totalMeditationMinutes: s.totalMeditationMinutes,
@@ -415,6 +439,7 @@ export const useAppStore = create<AppStore>()(
             }
           }
           if (!merged.fruitProgress) merged.fruitProgress = createDefaultFruitProgress()
+          if (!merged.loginMethod && merged.phone) merged.loginMethod = 'phone'
           if ((parsed as { avatar?: unknown }).avatar !== undefined) {
             merged.avatarId = parseAvatarId((parsed as { avatar?: unknown }).avatar)
           } else if (parsed.avatarId !== undefined) {

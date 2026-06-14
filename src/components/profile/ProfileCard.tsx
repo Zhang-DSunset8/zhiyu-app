@@ -10,21 +10,23 @@ const sheetSpring = { type: 'spring' as const, stiffness: 340, damping: 32 }
 const pickSpring = { type: 'spring' as const, stiffness: 480, damping: 20 }
 
 interface ProfileCardProps {
+  phone?: string
   signature: string
   fruitCoins: number
-  harvestCount: number
   paintingCount: number
   meditationMinutes: number
+  moodDiaryCount: number
   onUpdateNickname: (name: string) => void
   onUpdateSignature: (sig: string) => void
 }
 
 export function ProfileCard({
+  phone,
   signature,
   fruitCoins,
-  harvestCount,
   paintingCount,
   meditationMinutes,
+  moodDiaryCount,
   onUpdateNickname,
   onUpdateSignature,
 }: ProfileCardProps) {
@@ -133,15 +135,21 @@ export function ProfileCard({
                 {signature}
               </button>
             )}
+
+            {phone ? (
+              <p className="mt-2 text-xs tracking-wide text-[#9a9288]">
+                {phone.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2')}
+              </p>
+            ) : null}
           </div>
         </div>
 
         <div className="mt-6 grid grid-cols-4 gap-2">
           {[
             { label: '果币', value: fruitCoins, icon: '🪙' },
-            { label: '收获', value: harvestCount, icon: '🧺' },
             { label: '画作', value: paintingCount, icon: '🎨' },
             { label: '冥想', value: meditationMinutes, icon: '🧘' },
+            { label: '日记', value: moodDiaryCount, icon: '📝' },
           ].map((s) => (
             <div key={s.label} className="profile-stat-pill rounded-2xl py-3 text-center">
               <div className="mb-0.5 text-sm">{s.icon}</div>

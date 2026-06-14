@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: ['react-icons/ri', 'react-icons/fa'],
+  },
   server: {
     host: true,
     port: 5173,

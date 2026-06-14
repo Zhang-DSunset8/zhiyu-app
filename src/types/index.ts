@@ -102,10 +102,15 @@ export interface ToastState {
   type?: 'success' | 'info' | 'error'
 }
 
+export type LoginMethod = 'phone' | 'wechat' | 'qq' | 'apple'
+
 export interface AppData {
   nickname: string
   signature: string
   avatarId: AvatarId
+  /** 登录手机号（手机号登录时） */
+  phone: string
+  loginMethod: LoginMethod | null
   fruitCoins: number
   harvestCount: number
   totalMeditationMinutes: number
