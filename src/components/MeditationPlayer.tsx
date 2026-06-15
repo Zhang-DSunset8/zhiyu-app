@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { MeditationCourse, BackgroundSoundId } from '../types'
 import { BACKGROUND_SOUNDS } from '../types'
+import { CompanionIP } from './companion/CompanionIP'
 import { playAmbientSound, stopAmbientSound, pauseAmbientSound, resumeAmbientSound, setAmbientVolume, cleanupAudio } from '../utils/ambientAudio'
 import { ConfirmDialog } from './Modal'
 
@@ -143,6 +144,12 @@ export function MeditationPlayer({ course, onClose, onComplete }: Props) {
 
           {/* 呼吸圆 */}
           <div className="flex-1 flex flex-col items-center justify-center py-6">
+            <CompanionIP
+              state="meditating"
+              size="w-20 h-20"
+              glow
+              className="mb-4"
+            />
             <div
               className="relative flex items-center justify-center rounded-full bg-white/25 backdrop-blur-md shadow-lg"
               style={{

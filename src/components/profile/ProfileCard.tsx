@@ -199,14 +199,16 @@ export function ProfileCard({
                       aria-label={preset.label}
                       aria-pressed={selected}
                       onClick={() => handlePickAvatar(preset.id)}
-                      whileTap={{ scale: 0.92 }}
+                      whileTap={{ scale: 0.95 }}
                       animate={{ scale: selected ? 1.04 : 1 }}
                       transition={pickSpring}
-                      className="flex flex-col items-center rounded-[1.25rem] border-0 bg-transparent p-1"
+                      className="flex flex-col items-center rounded-[1.25rem] border-0 bg-transparent p-1 transition-transform active:scale-95"
                     >
                       <span
-                        className={`flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-[#fff8ee]/80 p-1 ${
-                          selected ? 'ring-4 ring-[#A8E6CF] ring-offset-2' : 'shadow-sm'
+                        className={`flex h-[4.25rem] w-[4.25rem] items-center justify-center overflow-hidden rounded-full bg-[#fff8ee]/80 p-0.5 transition-transform ${
+                          selected
+                            ? 'border-2 border-emerald-400'
+                            : 'border-2 border-transparent shadow-sm'
                         }`}
                       >
                         <AvatarImage id={preset.id} size={64} />

@@ -1,7 +1,5 @@
 import type { MeditationCourse, MeditationSeries, Topic, Achievement } from '../types'
 
-export const MEDITATION_CATEGORIES = ['全部', '助眠', '减压', '成长', '情绪调节']
-
 export const MEDITATION_COURSES: MeditationCourse[] = [
   {
     id: 'deep-breath',
@@ -28,7 +26,7 @@ export const MEDITATION_COURSES: MeditationCourse[] = [
     id: 'focus-now',
     title: '专注当下',
     duration: 8,
-    description: '注意你此刻的呼吸， gently 带回注意力',
+    description: '把注意力轻轻带回此刻的呼吸',
     category: '成长',
     breatheIn: 3,
     breatheOut: 5,
@@ -49,7 +47,7 @@ export const MEDITATION_COURSES: MeditationCourse[] = [
     id: 'body-scan',
     title: '睡前身体扫描',
     duration: 10,
-    description: '从脚趾到头顶，逐一放松每个部位',
+    description: '从脚趾到头顶，逐步放松身体',
     category: '助眠',
     breatheIn: 4,
     breatheOut: 8,
@@ -70,7 +68,7 @@ export const MEDITATION_COURSES: MeditationCourse[] = [
     id: 'emotion-hold',
     title: '情绪安放',
     duration: 6,
-    description: '接纳此刻的感受，像对待一个朋友',
+    description: '陪你把感受轻轻放下',
     category: '情绪调节',
     breatheIn: 5,
     breatheOut: 5,
@@ -186,7 +184,6 @@ export const TOPICS: Topic[] = [
   {
     id: 'topic-spring',
     title: '春天情绪养护',
-    cover: '',
     coverImage: '/topics/spring.jpg',
     coverGradient: 'linear-gradient(135deg, #fce7f3, #fef08a)',
     summary: '在万物复苏的季节，温柔照料你的内心',
@@ -203,7 +200,6 @@ export const TOPICS: Topic[] = [
   {
     id: 'topic-exam',
     title: '考前减压指南',
-    cover: '',
     coverImage: '/topics/exam.jpg',
     coverGradient: 'linear-gradient(135deg, #ffedd5, #d9f99d)',
     summary: '在压力中找到平静的力量',
@@ -225,7 +221,6 @@ export const TOPICS: Topic[] = [
   {
     id: 'topic-anxiety',
     title: '与焦虑共处',
-    cover: '',
     coverImage: '/topics/anxiety.jpg',
     coverGradient: 'linear-gradient(135deg, #dcfce7, #86efac)',
     summary: '学会与焦虑和平相处，而非对抗',
@@ -253,17 +248,6 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'painting-10', name: '小小画家', icon: 'gallery', description: '保存10幅画作' },
   { id: 'streak-7', name: '七日连续', icon: 'streak', description: '连续冥想7天' },
 ]
-
-/** @deprecated 主视觉已改用 TreeIllustration SVG，保留仅供兼容 */
-export const TREE_STAGE_EMOJI: Record<string, Record<string, string>> = {
-  apple: { seed: '🌰', seedling: '🌱', tree: '🌳', fruiting: '🍎' },
-  pear: { seed: '🌰', seedling: '🌱', tree: '🌳', fruiting: '🍐' },
-  peach: { seed: '🌰', seedling: '🌱', tree: '🌳', fruiting: '🍑' },
-  orange: { seed: '🌰', seedling: '🌱', tree: '🌳', fruiting: '🍊' },
-  strawberry: { seed: '🌰', seedling: '🌱', tree: '🌳', fruiting: '🍓' },
-  lemon: { seed: '🌰', seedling: '🌱', tree: '🌳', fruiting: '🍋' },
-  cherry: { seed: '🌰', seedling: '🌱', tree: '🌳', fruiting: '🍒' },
-}
 
 export const FAQ_ITEMS = [
   {

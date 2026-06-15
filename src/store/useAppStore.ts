@@ -13,7 +13,6 @@ import type {
 } from '../types'
 import {
   FRUIT_INFO,
-  HARVEST_REWARD,
   DEFAULT_AVATAR_ID,
   MOOD_DIARY_REWARD,
   SELF_CARE_REWARD,
@@ -30,8 +29,12 @@ import { useUserStore } from './useUserStore'
 import { ACHIEVEMENTS, SELF_CARE_QUOTES, SELF_CARE_TASKS } from '../data/content'
 import { generateId, isYesterday, todayKey } from '../utils/date'
 import { vibrate } from '../utils/vibrate'
+import {
+  MEDITATION_DROP_REWARD,
+  PAINTING_DROP_REWARD,
+} from './gameEconomy'
 
-const INITIAL_UNLOCKED: FruitType[] = ['apple', 'pear', 'peach']
+const INITIAL_UNLOCKED: FruitType[] = ['apple']
 
 const defaultData: AppData = {
   nickname: '果园旅人',
@@ -40,6 +43,7 @@ const defaultData: AppData = {
   phone: '',
   loginMethod: null,
   fruitCoins: 0,
+  waterDrops: 0,
   harvestCount: 0,
   totalMeditationMinutes: 0,
   meditationStreak: 0,
@@ -94,6 +98,11 @@ function ensureDailyReset(state: AppData): AppData {
   return state
 }
 
+function getWaterDrops(state: AppData): number {
+  const n = state.waterDrops
+  return typeof n === 'number' && Number.isFinite(n) ? n : 0
+}
+
 function getCurrentProgress(state: AppData): FruitProgress {
   return state.fruitProgress[state.selectedFruit] ?? { waterCount: 0, treeStage: 'seed' }
 }
@@ -134,8 +143,13 @@ interface AppStore extends AppData {
   guideSimulateMature: () => void
 
   getDailyWaterRemaining: () => number
+  earnDrops: (amount: number) => void
+  spendDrops: (amount: number) => boolean
+  spendCoins: (amount: number) => boolean
+  waterTree: (cost: number) => boolean
+  harvestTree: (reward: number) => boolean
+  unlockSeed: (seedId: FruitType, cost: number) => boolean
   addEmotionalWater: (source: 'painting' | 'meditation' | 'diary' | 'selfcare') => boolean
-  harvest: () => boolean
   selectFruit: (fruit: FruitType) => void
   unlockFruit: (fruit: FruitType) => boolean
 
@@ -238,6 +252,80 @@ export const useAppStore = create<AppStore>()(
         return Math.max(0, DAILY_WATER_LIMIT - s.dailyWaterUsed)
       },
 
+      earnDrops: (amount) => {
+        if (amount <= 0) return
+        set((state) => ({ waterDrops: getWaterDrops(state) + amount }))
+      },
+
+      spendDrops: (amount) => {
+        if (amount <= 0) return true
+        const current = getWaterDrops(get())
+        if (current < amount) return false
+        set({ waterDrops: current - amount })
+        return true
+      },
+
+      spendCoins: (amount) => {
+        if (amount <= 0) return true
+        if (get().fruitCoins < amount) return false
+        set({ fruitCoins: get().fruitCoins - amount })
+        return true
+      },
+
+      unlockSeed: (seedId, cost) => {
+        if (get().unlockedFruits.includes(seedId)) {
+          set({ selectedFruit: seedId })
+          return true
+        }
+        if (cost > 0 && !get().spendCoins(cost)) return false
+        set({
+          unlockedFruits: [...get().unlockedFruits, seedId],
+          selectedFruit: seedId,
+        })
+        get().showToast(`已解锁 ${FRUIT_INFO[seedId].name}`)
+        return true
+      },
+
+      waterTree: (cost) => {
+        const snapshot = ensureDailyReset(get())
+
+        if (DAILY_WATER_LIMIT_ENABLED && snapshot.dailyWaterUsed >= DAILY_WATER_LIMIT) {
+          get().showToast('今日浇灌次数已用完，明天再来吧', 'info')
+          return false
+        }
+
+        const current = getCurrentProgress(snapshot)
+        if (current.treeStage === 'fruiting') {
+          get().showToast('果实已成熟，去收获吧', 'info')
+          return false
+        }
+
+        const drops = getWaterDrops(snapshot)
+        if (drops < cost) {
+          get().showToast('水滴不足，去画画或冥想收集吧~', 'info')
+          return false
+        }
+
+        const water = Math.min(current.waterCount + 1, WATER_NEEDED)
+        const progress: FruitProgress = { waterCount: water, treeStage: stageFromWater(water) }
+        const today = todayKey()
+        const fruit = snapshot.selectedFruit
+
+        // 仅更新相关字段，避免展开整份 state 覆盖 waterDrops
+        set((state) => ({
+          waterDrops: getWaterDrops(state) - cost,
+          fruitProgress: {
+            ...state.fruitProgress,
+            [fruit]: progress,
+          },
+          dailyWaterUsed: ensureDailyReset(state).dailyWaterUsed + 1,
+          dailyWaterDate: today,
+        }))
+
+        if (get().vibrationEnabled) vibrate(30)
+        return true
+      },
+
       addEmotionalWater: (source) => {
         let s = ensureDailyReset(get())
         if (DAILY_WATER_LIMIT_ENABLED && s.dailyWaterUsed >= DAILY_WATER_LIMIT) {
@@ -268,7 +356,7 @@ export const useAppStore = create<AppStore>()(
         return true
       },
 
-      harvest: () => {
+      harvestTree: (reward) => {
         const s = get()
         const current = getCurrentProgress(s)
         if (current.treeStage !== 'fruiting') return false
@@ -277,12 +365,12 @@ export const useAppStore = create<AppStore>()(
         set({
           ...updateCurrentProgress(s, resetProgress),
           harvestCount: s.harvestCount + 1,
-          fruitCoins: s.fruitCoins + HARVEST_REWARD,
+          fruitCoins: s.fruitCoins + reward,
           guideSimulateFruiting: false,
         })
 
         if (get().vibrationEnabled) vibrate([50, 30, 50])
-        get().showToast(`收获成功！获得 ${HARVEST_REWARD} 果币`)
+        get().showToast(`收获成功！获得 ${reward} 果币`)
         if (!get().achievements.includes('first-harvest')) get().unlockAchievement('first-harvest')
         get().checkAchievements()
         return true
@@ -293,24 +381,16 @@ export const useAppStore = create<AppStore>()(
       },
 
       unlockFruit: (fruit) => {
-        const info = FRUIT_INFO[fruit]
-        if (get().unlockedFruits.includes(fruit)) return true
-        if (get().fruitCoins < info.unlockCost) return false
-        set({
-          fruitCoins: get().fruitCoins - info.unlockCost,
-          unlockedFruits: [...get().unlockedFruits, fruit],
-          selectedFruit: fruit,
-        })
-        get().showToast(`已解锁 ${info.name}`)
-        return true
+        const cost = FRUIT_INFO[fruit].unlockCost
+        return get().unlockSeed(fruit, cost)
       },
 
       savePainting: (dataUrl, title) => {
         const isFirst = get().paintings.length === 0
         const painting: Painting = { id: generateId(), title, dataUrl, createdAt: new Date().toISOString() }
         set({ paintings: [painting, ...get().paintings] })
-        get().addEmotionalWater('painting')
-        get().showToast('画作已保存')
+        get().earnDrops(PAINTING_DROP_REWARD)
+        get().showToast(`画作已保存，获得 ${PAINTING_DROP_REWARD} 水滴`)
         if (isFirst) get().unlockAchievement('first-painting')
         get().checkAchievements()
       },
@@ -338,7 +418,7 @@ export const useAppStore = create<AppStore>()(
           lastMeditationDate: today,
         })
 
-        get().addEmotionalWater('meditation')
+        get().earnDrops(MEDITATION_DROP_REWARD)
         if (isFirst) get().unlockAchievement('first-meditation')
         get().checkAchievements()
       },
@@ -365,7 +445,6 @@ export const useAppStore = create<AppStore>()(
             fruitCoins: get().fruitCoins + MOOD_DIARY_REWARD,
             lastMoodDiaryRewardDate: todayKey(),
           })
-          get().addEmotionalWater('diary')
           get().showToast(`心情已记录，获得 ${MOOD_DIARY_REWARD} 果币`)
         } else {
           get().showToast('心情已更新')
@@ -390,7 +469,6 @@ export const useAppStore = create<AppStore>()(
           fruitCoins: get().fruitCoins + SELF_CARE_REWARD,
           lastSelfCareRewardDate: today,
         })
-        get().addEmotionalWater('selfcare')
         get().showToast(`自我关怀完成，获得 ${SELF_CARE_REWARD} 果币`)
         if (!get().achievements.includes('first-selfcare')) get().unlockAchievement('first-selfcare')
         get().checkAchievements()
@@ -425,6 +503,7 @@ export const useAppStore = create<AppStore>()(
           phone: s.phone,
           loginMethod: s.loginMethod,
           fruitCoins: s.fruitCoins,
+          waterDrops: s.waterDrops,
           harvestCount: s.harvestCount,
           totalMeditationMinutes: s.totalMeditationMinutes,
           meditationStreak: s.meditationStreak,
@@ -512,8 +591,8 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 2,
-      migrate: (persisted) => {
+      version: 4,
+      migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (state && 'avatar' in state && !('avatarId' in state)) {
           state.avatarId = parseAvatarId(state.avatar)
@@ -521,6 +600,11 @@ export const useAppStore = create<AppStore>()(
         }
         if (state && state.avatarId !== undefined) {
           state.avatarId = parseAvatarId(state.avatarId)
+        }
+        if (version < 4) {
+          const raw = state.waterDrops
+          state.waterDrops =
+            typeof raw === 'number' && Number.isFinite(raw) ? raw : 0
         }
         return state as unknown as AppStore
       },

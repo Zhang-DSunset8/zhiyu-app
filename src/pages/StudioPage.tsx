@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAppStore } from '../store/useAppStore'
+import { CompanionIP } from '../components/companion/CompanionIP'
+import { useCompanionIpState } from '../components/companion/useCompanionIpState'
 import { defaultPaintingTitle } from '../utils/date'
 import { ConfirmDialog, Modal } from '../components/Modal'
 import { ClearCanvasConfirm } from '../components/studio/ClearCanvasConfirm'
@@ -9,6 +11,8 @@ import { SaveFab } from '../components/studio/SaveFab'
 import { StudioGallery } from '../components/studio/StudioGallery'
 import { StudioHeader } from '../components/studio/StudioHeader'
 import { usePaintCanvas } from '../components/studio/usePaintCanvas'
+import { DropEarnToast } from '../components/game/DropEarnToast'
+import { PAINTING_DROP_REWARD } from '../store/gameEconomy'
 
 export function StudioPage() {
   const { paintings, deletePainting, savePainting } = useAppStore()
@@ -20,10 +24,25 @@ export function StudioPage() {
   const [showClear, setShowClear] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
   const [saveSuccessTick, setSaveSuccessTick] = useState(0)
+  const [dropEarnTick, setDropEarnTick] = useState(0)
   const [title, setTitle] = useState(defaultPaintingTitle())
 
   const paint = usePaintCanvas()
+  const { ipState, setIpState, setTemporary, clearTimers } = useCompanionIpState('idle')
+  const idleTimerRef = useRef<number | null>(null)
   const preview = paintings.find((p) => p.id === previewId)
+
+  useEffect(() => {
+    if (paint.isDrawing) {
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current)
+      setIpState('drawing')
+    } else {
+      idleTimerRef.current = window.setTimeout(() => setIpState('idle'), 1500)
+    }
+    return () => {
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current)
+    }
+  }, [paint.isDrawing, setIpState])
 
   const handleSave = () => {
     if (!paint.hasContent) {
@@ -38,6 +57,9 @@ export function StudioPage() {
     savePainting(paint.exportDataUrl(), title || defaultPaintingTitle())
     setShowSave(false)
     setSaveSuccessTick((t) => t + 1)
+    setDropEarnTick((t) => t + 1)
+    clearTimers()
+    setTemporary('cheering', 2000)
   }
 
   const handleConfirmClear = () => {
@@ -78,6 +100,14 @@ export function StudioPage() {
 
       {!showGallery && (
         <>
+          <DropEarnToast
+            amount={PAINTING_DROP_REWARD}
+            tick={dropEarnTick}
+            className="right-6 top-[max(5rem,env(safe-area-inset-top))]"
+          />
+
+          <CompanionIP state={ipState} className="absolute bottom-24 right-6 z-40" />
+
           <StudioHeader isDrawing={paint.isDrawing} onOpenGallery={() => setShowGallery(true)} />
 
           <FloatingToolDock

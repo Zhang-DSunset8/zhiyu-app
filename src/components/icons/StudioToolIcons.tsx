@@ -83,15 +83,6 @@ export function IconRedo({ className }: IconProps) {
   )
 }
 
-export function IconClear({ className }: IconProps) {
-  return (
-    <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="5" y="6" width="14" height="14" rx="2" stroke={stroke} strokeWidth={sw} fill="currentColor" fillOpacity={0.08} />
-      <path d="M9 10 L15 16 M15 10 L9 16" stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
-    </svg>
-  )
-}
-
 export function IconSave({ className }: IconProps) {
   return (
     <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -120,24 +111,6 @@ export function IconCheck({ className }: IconProps) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-    </svg>
-  )
-}
-
-export function IconPalette({ className }: IconProps) {
-  return (
-    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M12 2 C6.5 2 2 6.5 2 12 C2 16.5 5.5 20 10 20 L10.5 20 C11.6 20 12.5 19.1 12.5 18 C12.5 17.2 11.8 16.5 11 16.5 L10 16.5 C8.3 16.5 7 15.2 7 13.5 C7 11.8 8.3 10.5 10 10.5 L15 10.5 C17.8 10.5 20 8.3 20 5.5 C20 3.5 18 2 16 2 L12 2 Z"
-        stroke={stroke}
-        strokeWidth={1.75}
-        fill="currentColor"
-        fillOpacity={0.12}
-        strokeLinejoin="round"
-      />
-      <circle cx="7.5" cy="8" r="1.5" fill="#ef4444" />
-      <circle cx="11.5" cy="5.5" r="1.5" fill="#22c55e" />
-      <circle cx="15.5" cy="7.5" r="1.5" fill="#3b82f6" />
     </svg>
   )
 }

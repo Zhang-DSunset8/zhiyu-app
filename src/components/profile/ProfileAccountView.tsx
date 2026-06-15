@@ -1,4 +1,6 @@
 import { useAppStore } from '../../store/useAppStore'
+import { CompanionIP } from '../companion/CompanionIP'
+import type { CompanionIpState } from '../companion/CompanionIP'
 import {
   getAccountSecurityInfo,
   GroupListItem,
@@ -10,12 +12,14 @@ interface ProfileAccountViewProps {
   onBack: () => void
   onClearData: () => void
   onDeleteAccount: () => void
+  companionState?: CompanionIpState
 }
 
 export function ProfileAccountView({
   onBack,
   onClearData,
   onDeleteAccount,
+  companionState = 'idle',
 }: ProfileAccountViewProps) {
   const loginMethod = useAppStore((s) => s.loginMethod)
   const phone = useAppStore((s) => s.phone)
@@ -24,6 +28,12 @@ export function ProfileAccountView({
   return (
     <>
       <SubPageHeader title="账号与安全" onBack={onBack} />
+
+      <CompanionIP
+        state={companionState}
+        size="w-14 h-14"
+        className="absolute right-5 top-[calc(env(safe-area-inset-top)+4.5rem)] z-10"
+      />
 
       <div className="flex flex-1 flex-col px-5 pb-10">
         <SettingsGroupCard>

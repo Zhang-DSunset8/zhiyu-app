@@ -53,8 +53,6 @@ export interface MeditationSeries {
 export interface Topic {
   id: string
   title: string
-  /** @deprecated 保留兼容，请使用 coverImage */
-  cover: string
   coverImage: string
   coverGradient: string
   summary: string
@@ -112,6 +110,8 @@ export interface AppData {
   phone: string
   loginMethod: LoginMethod | null
   fruitCoins: number
+  /** 水滴余额 — 画画 / 冥想赚取，果园浇水与解锁种子消费 */
+  waterDrops: number
   harvestCount: number
   totalMeditationMinutes: number
   meditationStreak: number
@@ -141,8 +141,8 @@ export interface AppData {
 
 export const FRUIT_INFO: Record<FruitType, { name: string; emoji: string; unlockCost: number }> = {
   apple: { name: '苹果', emoji: '🍎', unlockCost: 0 },
-  pear: { name: '梨', emoji: '🍐', unlockCost: 0 },
-  peach: { name: '桃', emoji: '🍑', unlockCost: 0 },
+  pear: { name: '梨', emoji: '🍐', unlockCost: 50 },
+  peach: { name: '桃', emoji: '🍑', unlockCost: 50 },
   orange: { name: '橘子', emoji: '🍊', unlockCost: 50 },
   strawberry: { name: '草莓', emoji: '🍓', unlockCost: 50 },
   lemon: { name: '柠檬', emoji: '🍋', unlockCost: 50 },
@@ -157,9 +157,7 @@ export const MOOD_EMOJIS: { id: MoodEmoji; label: string; emoji: string }[] = [
   { id: 'cozy', label: '惬意', emoji: '😄' },
 ]
 
-export const DEFAULT_AVATAR_ID: AvatarId = 1
-/** @deprecated 使用 DEFAULT_AVATAR_ID */
-export const DEFAULT_AVATAR = DEFAULT_AVATAR_ID
+export const DEFAULT_AVATAR_ID: AvatarId = 4
 export const USER_STORAGE_KEY = 'emotion_orchard_v1_user'
 
 export const BACKGROUND_SOUNDS: { id: BackgroundSoundId; label: string; icon: string }[] = [
@@ -174,13 +172,12 @@ export const WATER_NEEDED = 5
 export const DAILY_WATER_LIMIT = 5
 /** 测试用：设为 false 可取消每日浇灌上限 */
 export const DAILY_WATER_LIMIT_ENABLED = false
-export const HARVEST_REWARD = 30
 export const MOOD_DIARY_REWARD = 10
 export const SELF_CARE_REWARD = 10
 export const APP_VERSION = 'v1.0.0'
 export const STORAGE_KEY = 'emotion_orchard_v1'
 
-export function defaultFruitProgress(): FruitProgress {
+function defaultFruitProgress(): FruitProgress {
   return { waterCount: 0, treeStage: 'seed' }
 }
 

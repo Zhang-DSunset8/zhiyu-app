@@ -11,6 +11,8 @@ import { useUserStore } from '../store/useUserStore'
 import { AchievementOverview } from '../components/achievements/AchievementOverview'
 import { AchievementList } from '../components/achievements/AchievementList'
 import { DeleteAccountModal } from '../components/profile/DeleteAccountModal'
+import { CompanionIP } from '../components/companion/CompanionIP'
+import type { CompanionIpState } from '../components/companion/CompanionIP'
 import { ProfileAccountView } from '../components/profile/ProfileAccountView'
 import { ProfileHelpView } from '../components/profile/ProfileHelpView'
 import { ProfileSettingsView } from '../components/profile/ProfileSettingsView'
@@ -30,6 +32,8 @@ export function ProfilePage() {
 
   const recentAchievements = ACHIEVEMENTS.filter((a) => store.achievements.includes(a.id)).slice(-3).reverse()
   const appShell = typeof document !== 'undefined' ? document.getElementById('app-shell') : null
+  const accountCompanionState: CompanionIpState =
+    clearConfirm || deleteAccountOpen ? 'sad' : 'idle'
 
   const subPages = (
     <AnimatePresence>
@@ -75,6 +79,7 @@ export function ProfilePage() {
             onBack={() => setView('settings')}
             onClearData={() => setClearConfirm(true)}
             onDeleteAccount={() => setDeleteAccountOpen(true)}
+            companionState={accountCompanionState}
           />
         </motion.div>
       )}
@@ -87,6 +92,12 @@ export function ProfilePage() {
       {view === 'main' && (
         <>
           <PageHeader title="我的" subtitle={store.nickname} />
+
+          <CompanionIP
+            state="idle"
+            size="w-14 h-14"
+            className="absolute right-5 top-[calc(env(safe-area-inset-top)+4.5rem)] z-10"
+          />
 
           <div className="space-y-4 px-5">
             <ProfileCard
@@ -103,7 +114,7 @@ export function ProfilePage() {
               onUpdateSignature={(sig) => store.updateProfile({ signature: sig })}
             />
 
-            <GlassCard className="!p-4">
+            <GlassCard className="relative !p-4">
               <AchievementOverview
                 recent={recentAchievements}
                 onViewAll={() => setShowAchievements(true)}

@@ -15,7 +15,7 @@ export function StudioHeader({ isDrawing, onOpenGallery }: StudioHeaderProps) {
     >
       <div className="pointer-events-auto">
         <h1 className="text-xl font-bold tracking-tight text-orchard-800">画室</h1>
-        <p className="mt-0.5 text-xs text-ink-muted">自由表达，无需评判</p>
+        <p className="mt-0.5 text-xs text-ink-muted">随心创作，释放灵感</p>
       </div>
 
       <button

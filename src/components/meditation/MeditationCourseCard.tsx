@@ -1,68 +1,51 @@
-import { Leaf, Moon, Play, Sun, Wind, type LucideIcon } from 'lucide-react'
+import { motion } from 'framer-motion'
 import type { MeditationCourse } from '../../types'
-
-type CourseTheme = {
-  Icon: LucideIcon
-  iconBg: string
-  iconColor: string
-}
-
-const COURSE_THEMES: Record<string, CourseTheme> = {
-  'body-scan': { Icon: Moon, iconBg: 'bg-indigo-50', iconColor: 'text-indigo-400' },
-  'emotion-hold': { Icon: Sun, iconBg: 'bg-orange-50', iconColor: 'text-orange-400' },
-  'anxiety-ease': { Icon: Leaf, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500' },
-  'deep-breath': { Icon: Wind, iconBg: 'bg-sky-50', iconColor: 'text-sky-400' },
-  'focus-now': { Icon: Leaf, iconBg: 'bg-teal-50', iconColor: 'text-teal-500' },
-  'morning-wake': { Icon: Sun, iconBg: 'bg-amber-50', iconColor: 'text-amber-500' },
-}
-
-const CATEGORY_THEMES: Record<string, CourseTheme> = {
-  助眠: { Icon: Moon, iconBg: 'bg-indigo-50', iconColor: 'text-indigo-400' },
-  减压: { Icon: Wind, iconBg: 'bg-sky-50', iconColor: 'text-sky-400' },
-  成长: { Icon: Leaf, iconBg: 'bg-teal-50', iconColor: 'text-teal-500' },
-  情绪调节: { Icon: Sun, iconBg: 'bg-orange-50', iconColor: 'text-orange-400' },
-}
-
-function getCourseTheme(course: MeditationCourse): CourseTheme {
-  return COURSE_THEMES[course.id] ?? CATEGORY_THEMES[course.category] ?? {
-    Icon: Wind,
-    iconBg: 'bg-gray-50',
-    iconColor: 'text-gray-400',
-  }
-}
+import { getMeditationTheme, LIST_CARD_CLASS, PLAY_BUTTON_CLASS, PlayIcon } from './meditationTheme'
 
 interface MeditationCourseCardProps {
   course: MeditationCourse
   onPlay: () => void
+  index?: number
 }
 
-export function MeditationCourseCard({ course, onPlay }: MeditationCourseCardProps) {
-  const { Icon, iconBg, iconColor } = getCourseTheme(course)
+const itemSpring = { type: 'spring' as const, stiffness: 300, damping: 30 }
+
+export function MeditationCourseCard({ course, onPlay, index = 0 }: MeditationCourseCardProps) {
+  const { Icon, iconBg } = getMeditationTheme(course)
 
   return (
-    <article className="flex items-center gap-4 rounded-[2rem] border border-gray-50/50 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+    <motion.article
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ ...itemSpring, delay: 0.16 + index * 0.04 }}
+      className={LIST_CARD_CLASS}
+    >
       <div
-        className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${iconBg}`}
+        className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.2rem] ${iconBg}`}
       >
-        <Icon size={24} strokeWidth={1.75} className={iconColor} aria-hidden />
+        <Icon size={22} strokeWidth={1.55} aria-hidden />
       </div>
 
       <div className="min-w-0 flex-1">
-        <h3 className="mb-1 text-lg font-bold text-gray-800">{course.title}</h3>
-        <p className="mb-2 text-xs font-medium text-gray-400">
+        <h3 className="truncate text-[15px] font-semibold leading-tight text-orchard-800">
+          {course.title}
+        </h3>
+        <p className="mt-1.5 text-[11px] font-normal text-ink-muted/80">
           {course.duration} 分钟 · {course.category} · 吸{course.breatheIn}/呼{course.breatheOut}
         </p>
-        <p className="line-clamp-1 text-sm text-gray-500/80">{course.description}</p>
+        <p className="mt-1.5 truncate text-[13px] leading-snug text-orchard-700/60">
+          {course.description}
+        </p>
       </div>
 
       <button
         type="button"
         aria-label={`开始 ${course.title}`}
         onClick={onPlay}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-50 text-gray-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500"
+        className={PLAY_BUTTON_CLASS}
       >
-        <Play size={18} strokeWidth={1.75} className="ml-0.5" aria-hidden />
+        <PlayIcon size={13} strokeWidth={1.75} className="ml-px" aria-hidden />
       </button>
-    </article>
+    </motion.article>
   )
 }

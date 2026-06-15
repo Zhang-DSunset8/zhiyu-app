@@ -35,13 +35,10 @@ export function SeedCard({ fruit, selected, unlocked, waterCount, onClick }: Pro
       </div>
 
       {!unlocked && (
-        <div className="mt-0.5 flex flex-col items-center gap-0.5">
-          <svg width="10" height="10" viewBox="0 0 10 10" className="text-[#8a8278]" aria-hidden>
-            <rect x="2.5" y="5" width="5" height="4" rx="0.6" fill="currentColor" opacity="0.7" />
-            <path d="M5 2.5 v2.5" stroke="currentColor" strokeWidth="1" />
-            <circle cx="5" cy="2.5" r="1.2" fill="currentColor" />
-          </svg>
-          <span className="text-[9px] font-semibold leading-none text-[#8a8278]">{info.unlockCost}</span>
+        <div className="mt-0.5 flex items-center gap-0.5 text-[9px] font-semibold leading-none text-[#8a8278]">
+          <span aria-hidden>🔒</span>
+          <span>{info.unlockCost}</span>
+          <span aria-hidden>🪙</span>
         </div>
       )}
 

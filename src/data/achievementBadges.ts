@@ -18,20 +18,3 @@ export const ACHIEVEMENT_BADGE_META: Record<AchievementIconId, AchievementBadgeM
   gallery: { emoji: '🖼️', gradient: 'from-[#fae8ff] to-[#f5d0fe]' },
   streak: { emoji: '💫', gradient: 'from-[#ffedd5] to-[#fed7aa]' },
 }
-
-export function resolveAchievementIcon(icon: string): AchievementIconId {
-  if (icon in ACHIEVEMENT_BADGE_META) return icon as AchievementIconId
-  const legacy: Record<string, AchievementIconId> = {
-    '🎨': 'painting',
-    '🧘': 'meditation',
-    '🍎': 'harvest',
-    '📝': 'diary',
-    '💚': 'selfcare',
-    '🏅': 'series',
-    '⏱️': 'timer',
-    '🌾': 'bounty',
-    '🖼️': 'gallery',
-    '🔥': 'streak',
-  }
-  return legacy[icon] ?? 'painting'
-}

@@ -55,14 +55,14 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     id: 'coins',
-    targetId: 'onboarding-coin-balance',
-    text: '坚持这些疗愈小习惯，当果树结果时就能收获果币，用来解锁更多可爱的种子啦！',
+    targetId: 'onboarding-water-drops',
+    text: '画画和冥想可以收集水滴浇灌果树；收获果实获得果币，用来解锁更多种子。',
     padding: 10,
   },
   {
     id: 'studio-cta',
     targetId: 'onboarding-nav-studio',
-    text: '现在，不如去画室画下你的第一笔，完成我们的第一次浇灌吧？',
+    text: '现在，不如去画室画下你的第一笔，赚取第一滴水滴吧？',
     primaryLabel: '去试试',
     padding: 12,
   },

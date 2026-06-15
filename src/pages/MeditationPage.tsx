@@ -1,25 +1,56 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useAppStore } from '../store/useAppStore'
-import { MEDITATION_COURSES, MEDITATION_CATEGORIES, MEDITATION_SERIES } from '../data/content'
+import { MEDITATION_COURSES, MEDITATION_SERIES } from '../data/content'
 import type { MeditationCourse } from '../types'
 import { MeditationPlayer } from '../components/MeditationPlayer'
+import { FeaturedMeditationCard } from '../components/meditation/FeaturedMeditationCard'
+import { MeditationCategoryChips } from '../components/meditation/MeditationCategoryChips'
 import { MeditationCourseCard } from '../components/meditation/MeditationCourseCard'
-import { PageShell, PageHeader } from '../components/ui/PageLayout'
+import { MeditationHero } from '../components/meditation/MeditationHero'
+import { SeriesCourseCarousel } from '../components/meditation/SeriesCourseCarousel'
+import {
+  BREATH_TEST_COURSE_ID,
+  filterMeditationCourses,
+  getFeaturedLabel,
+  MEDITATION_CHIP_FILTERS,
+  pickFeaturedCourse,
+} from '../components/meditation/meditationUtils'
+import { PageShell } from '../components/ui/PageLayout'
+import { DropEarnToast } from '../components/game/DropEarnToast'
+import { MEDITATION_DROP_REWARD } from '../store/gameEconomy'
 
 export function MeditationPage() {
   const {
-    totalMeditationMinutes, meditationStreak,
-    seriesProgress, lastSeriesUnlockDate, completeSeriesLesson,
+    totalMeditationMinutes,
+    meditationStreak,
+    seriesProgress,
+    lastSeriesUnlockDate,
+    completeSeriesLesson,
   } = useAppStore()
   const [category, setCategory] = useState('全部')
   const [playing, setPlaying] = useState<MeditationCourse | null>(null)
   const [seriesLesson, setSeriesLesson] = useState<{
-    seriesId: string; lessonIndex: number; title: string; duration: number
+    seriesId: string
+    lessonIndex: number
+    title: string
+    duration: number
   } | null>(null)
+  const [dropEarnTick, setDropEarnTick] = useState(0)
 
-  const filtered = category === '全部'
-    ? MEDITATION_COURSES
-    : MEDITATION_COURSES.filter((c) => c.category === category)
+  const filtered = useMemo(() => filterMeditationCourses(category), [category])
+
+  const featured = useMemo(() => pickFeaturedCourse(filtered), [filtered])
+
+  const listCourses = useMemo(
+    () => filtered.filter((c) => c.id !== featured.id),
+    [filtered, featured.id],
+  )
+
+  const breathTestCourse = useMemo(
+    () => MEDITATION_COURSES.find((c) => c.id === BREATH_TEST_COURSE_ID) ?? MEDITATION_COURSES[0],
+    [],
+  )
 
   const getMaxUnlocked = (seriesId: string, lessonCount: number) => {
     const done = seriesProgress[seriesId] ?? -1
@@ -31,74 +62,85 @@ export function MeditationPage() {
 
   const defaultCourse = MEDITATION_COURSES[0]
 
+  const featuredProgress =
+    meditationStreak > 0
+      ? `已连续 ${meditationStreak} 天 · 目标 7 天`
+      : totalMeditationMinutes > 0
+        ? `已累计 ${totalMeditationMinutes} 分钟`
+        : undefined
+
   return (
-    <PageShell className="pb-4">
-      <PageHeader
-        title="冥想"
-        subtitle={`累计 ${totalMeditationMinutes} 分钟 · 连续 ${meditationStreak} 天`}
+    <PageShell className="relative bg-[#FCFAF8] pb-8">
+      <DropEarnToast
+        amount={MEDITATION_DROP_REWARD}
+        tick={dropEarnTick}
+        className="right-5 top-[max(4.5rem,env(safe-area-inset-top))]"
       />
 
-      {MEDITATION_SERIES.map((series) => {
-        const maxUnlocked = getMaxUnlocked(series.id, series.lessons.length)
-        const seriesDone = seriesProgress[series.id] ?? -1
-        return (
-          <section key={series.id} className="px-5 mt-2 mb-4">
-            <h2 className="text-sm font-bold text-orchard-800">{series.title}</h2>
-            <p className="text-xs text-ink-muted mb-3">{series.description}</p>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-              {series.lessons.map((lesson, i) => {
-                const unlocked = i <= maxUnlocked
-                const done = i <= seriesDone
-                return (
-                  <button
-                    key={lesson.id}
-                    disabled={!unlocked}
-                    onClick={() => setSeriesLesson({
-                      seriesId: series.id, lessonIndex: i, title: lesson.title, duration: lesson.duration,
-                    })}
-                    className={`flex-shrink-0 w-36 p-4 rounded-2xl text-left transition-all ${
-                      done
-                        ? 'glass-card ring-1 ring-orchard-200'
-                        : unlocked
-                          ? 'glass-card hover:shadow-md'
-                          : 'bg-gray-100/80 opacity-45'
-                    }`}
-                  >
-                    <div className="text-[10px] text-orchard-500 font-semibold">第 {i + 1} 课</div>
-                    <div className="text-sm font-semibold text-orchard-800 mt-1">{lesson.title}</div>
-                    <div className="text-xs text-ink-muted mt-2 flex items-center gap-1">
-                      {lesson.duration} 分钟 {done && <span className="text-orchard-500">✓</span>}
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </section>
-        )
-      })}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-sky-50/20 via-emerald-50/8 to-transparent"
+        aria-hidden
+      />
 
-      <div className="flex gap-2 px-5 overflow-x-auto scrollbar-hide mb-4">
-        {MEDITATION_CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              category === cat ? 'chip-active' : 'chip text-ink-muted'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+      <MeditationHero
+        streakDays={meditationStreak}
+        totalMinutes={totalMeditationMinutes}
+        onBreathTest={() => setPlaying(breathTestCourse)}
+        onRecentPractice={() => setPlaying(featured)}
+      />
 
-      <div className="space-y-3 px-5 pb-4">
-        {filtered.map((course) => (
-          <MeditationCourseCard
-            key={course.id}
-            course={course}
-            onPlay={() => setPlaying(course)}
+      <div className="relative space-y-7">
+        <div className="px-5">
+          <FeaturedMeditationCard
+            course={featured}
+            label={getFeaturedLabel(category)}
+            progressText={featuredProgress}
+            onPlay={() => setPlaying(featured)}
           />
-        ))}
+        </div>
+
+        <MeditationCategoryChips
+          chips={MEDITATION_CHIP_FILTERS}
+          active={category}
+          onChange={setCategory}
+        />
+
+        <SeriesCourseCarousel
+          seriesList={MEDITATION_SERIES}
+          seriesProgress={seriesProgress}
+          getMaxUnlocked={getMaxUnlocked}
+          onOpenSeries={(seriesId, lessonIndex, title, duration) =>
+            setSeriesLesson({ seriesId, lessonIndex, title, duration })
+          }
+        />
+
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 30, delay: 0.14 }}
+          className="px-5"
+        >
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-orchard-800">推荐练习</h2>
+              <p className="mt-1 text-xs text-ink-muted/85">按你的节奏，慢慢开始</p>
+            </div>
+            {listCourses.length > 0 && (
+              <span className="text-[11px] text-ink-muted/70">{listCourses.length} 个练习</span>
+            )}
+          </div>
+
+          <div className="space-y-3.5">
+            {listCourses.map((course, index) => (
+              <MeditationCourseCard
+                key={course.id}
+                course={course}
+                index={index}
+                onPlay={() => setPlaying(course)}
+              />
+            ))}
+          </div>
+        </motion.section>
       </div>
 
       {playing && (
@@ -106,8 +148,8 @@ export function MeditationPage() {
           course={playing}
           onClose={() => setPlaying(null)}
           onComplete={(mins) => {
-            useAppStore.getState().showToast(`冥想完成，已记录 ${mins} 分钟`)
             useAppStore.getState().completeMeditation(playing.id, mins)
+            setDropEarnTick((t) => t + 1)
             setPlaying(null)
           }}
         />
@@ -126,10 +168,11 @@ export function MeditationPage() {
           onClose={() => setSeriesLesson(null)}
           onComplete={(mins) => {
             completeSeriesLesson(seriesLesson.seriesId, seriesLesson.lessonIndex)
-            useAppStore.getState().showToast(`冥想完成，已记录 ${mins} 分钟`)
             useAppStore.getState().completeMeditation(
-              seriesLesson.seriesId + '-' + seriesLesson.lessonIndex, mins,
+              seriesLesson.seriesId + '-' + seriesLesson.lessonIndex,
+              mins,
             )
+            setDropEarnTick((t) => t + 1)
             setSeriesLesson(null)
           }}
         />
